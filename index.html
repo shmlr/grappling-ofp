@@ -211,8 +211,10 @@ const tech={
 'Подвижность плеч и таза (мин)':['floor','Плавно двигать плечами и тазом в комфортной амплитуде.','Избегать резких движений.']
 };
 const techniqueLinks={"Pallof press":"https://musclewiki.com/exercise/cable-pallof-press","Dead bug":"https://musclewiki.com/exercise/dead-bug","Гоблет-приседание":"https://musclewiki.com/exercise/dumbbell-goblet-squat","Приседания без веса":"https://musclewiki.com/ru-ru/exercise/bodyweight-squat","Ягодичный мост":"https://musclewiki.com/exercise/glute-bridge","Отжимания с опорой":"https://musclewiki.com/exercise/incline-push-up","Отжимания":"https://musclewiki.com/exercise/push-up","Румынская тяга с лёгкими гантелями":"https://musclewiki.com/exercise/dumbbell-romanian-deadlift","Горизонтальная тяга блока":"https://musclewiki.com/exercise/machine-seated-cable-row","Вертикальная тяга блока":"https://musclewiki.com/exercise/machine-pulldown","Переноска гантелей (м)":"https://musclewiki.com/ru-ru/exercise/dumbbell-farmer-walk","Боковая планка (сек)":"https://musclewiki.com/exercise/elbow-side-plank","Сплит-приседания":"https://musclewiki.com/exercise/split-squat"};
-function detail(name){const t=tech[name]||['floor','Выполняйте плавно в комфортной амплитуде.','Не выполняйте через боль.'];const url=techniqueLinks[name];return '<div class="techtext" style="margin-top:10px"><b>Техника:</b> '+esc(t[1])+'<br><b>Избегайте:</b> '+esc(t[2])+'</div>'+(url?'<p><a class="techlink" href="'+url+'" target="_blank" rel="noopener noreferrer">▶ Смотреть технику ↗</a></p>':'<p class="muted">Видео пока не проверено. Попросите тренера показать движение.</p>')}
-
+function detail(name){
+ const t=tech[name]||['floor','Двигайся плавно в комфортной амплитуде.','Не выполняй через боль.'],url=techniqueLinks[name];
+ return '<details class="exercise-info"><summary>Техника и ошибки</summary><div class="techtext"><p>'+esc(t[1])+'</p><p><b>Не делай:</b> '+esc(t[2])+'</p></div>'+(url?'<a class="techlink" href="'+url+'" target="_blank" rel="noopener noreferrer">Смотреть упражнение ↗</a>':'')+'</details>';
+}
 
 const STORE='grappling-ofp-v2',weekdays=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const units={'Вис с опорой':'сек','Боковая планка (сек)':'сек','Переноска гантелей (м)':'м','Лёгкая подвижность (мин)':'мин'};
@@ -240,12 +242,12 @@ function syncDate(v){
  const day=dayOf(v);if(!day){$('weekday').textContent='Некорректная дата';return;}
  $('date').value=$('matdate').value=v;$('day').value=day;$('weekday').textContent=day;
  activeReplacement=null;$('replacement').innerHTML='';
- drawExercises();updateMatStatus();
+ draw();updateMatStatus();
 }
 function updateMatStatus(){
  const date=selectedDate(),rep=lastReplacement(date),mat=lastMat(date),weekDay=currentDay();
  const disabled=!!rep||!!mat||weekDay==='Вс';
- const message=rep&&mat?'Конфликт записей: на эту дату сохранены и борьба, и отмена. Удалите ошибочную запись в истории.':rep?'Борьба отменена. '+(rep.kind==='rest'?'Отдых':'Замена')+' сохранена в журнале.':mat?'Борьба проведена и записана.':weekDay==='Вс'?'Воскресенье: отдых, борьбы по расписанию нет.':'Борьба ещё не отмечена.';
+ const message=rep&&mat?'Несовпадение записей. Проверь журнал.':rep?'Борьба отменена · '+(rep.kind==='rest'?'отдых':'замена ОФП'):mat?'Борьба сохранена':weekDay==='Вс'?'Воскресенье · отдых':'Борьба не записана';
  $('matStatus').textContent=message;
  $('matStatus').className='status-note'+(rep?' warn':'');
  ['matmin','rpe','bouts'].forEach(id=>$(id).disabled=disabled);
@@ -257,17 +259,32 @@ function updateMatStatus(){
  if(rep)$('makeReplacement').title='Замена для этого дня уже сохранена';
  else $('makeReplacement').title='';
 }
+function planForDay(d,mode){
+ if(d==='Вс')return 'Отдых';
+ if(d==='Сб')return 'Схватки · 10:00';
+ if(mode==='mixed'&&(d==='Вт'||d==='Чт'))return 'Зал · 16:00, борьба · 19:00';
+ const session=plan[mode]?.[d]?.length?'ОФП, борьба · 19:00':'Борьба · 19:00';
+ return session;
+}
 function draw(){
- const mode=$('mode').value;
- $('schedule').innerHTML=days.map(d=>'<p><b>'+d+'</b>: '+(mode==='mixed'&&(d==='Вт'||d==='Чт')?'зал 16:00, 35–40 мин':d==='Вт'||d==='Чт'?'дом, 25–35 мин':'дом, лёгкая ОФП 10–20 мин')+'; борьба 19:00–20:20</p>').join('')+'<p><b>Сб:</b> схватки с 10:00, без зала</p><p><b>Вс:</b> отдых</p>';
+ const mode=$('mode').value,day=currentDay();
+ $('todaySummary').innerHTML='<strong>'+esc(day||'')+'</strong> · '+esc(planForDay(day,mode));
+ $('schedule').innerHTML=[...days,'Сб','Вс'].map(d=>'<p><strong>'+d+'</strong> · '+esc(planForDay(d,mode))+'</p>').join('');
  drawExercises();
 }
 function exerciseRows(e,i,prefix,setCount){
- return Array.from({length:setCount},(_,j)=>'<div class="row"><label><input type="checkbox" id="'+prefix+'c'+i+'_'+j+'"> Подход '+(j+1)+'</label><label>'+esc(units[e[0]]||'повт.')+' <input type="number" min="1" max="600" id="'+prefix+'n'+i+'_'+j+'" value="'+e[2]+'" inputmode="numeric"></label>'+(prefix===''?'<label>кг <input type="number" min="0" max="250" step=".5" id="'+prefix+'k'+i+'_'+j+'" value="0" inputmode="decimal"></label>':'')+'</div>').join('');
+ const unit=units[e[0]]||'повт.',two=prefix!==''; 
+ return Array.from({length:setCount},(_,j)=>
+ '<div class="set-row'+(two?' two':'')+'"><label class="set-check"><input type="checkbox" id="'+prefix+'c'+i+'_'+j+'"> Подход '+(j+1)+'</label>'+
+ '<label class="set-field">'+esc(unit)+'<input type="number" min="1" max="600" id="'+prefix+'n'+i+'_'+j+'" value="'+e[2]+'" inputmode="numeric"></label>'+
+ (two?'':'<label class="set-field">вес, кг<input type="number" min="0" max="250" step=".5" id="'+prefix+'k'+i+'_'+j+'" value="0" inputmode="decimal"></label>')+
+ '</div>').join('');
 }
 function drawExercises(){
  const day=currentDay(),mode=$('mode').value,w=+$('week').value,p=(plan[mode]||{})[day]||[];
- $('exercises').innerHTML=p.length?p.map((e,i)=>'<div class="exercise"><b>'+esc(e[0])+'</b>'+detail(e[0])+'<p class="muted">Ориентир: '+(w===7?1:e[1])+' × '+e[2]+' '+(units[e[0]]||'повт.')+'</p>'+exerciseRows(e,i,'',w===7?1:e[1])+'</div>').join(''):'<p class="muted">В этот день плановой ОФП нет. Отдых или схватки по расписанию.</p>';
+ $('exercises').innerHTML=p.length?p.map((e,i)=>
+ '<div class="exercise"><div class="exercise-title"><strong>'+esc(e[0])+'</strong><span class="target">'+(w===7?1:e[1])+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+
+ detail(e[0])+exerciseRows(e,i,'',w===7?1:e[1])+'</div>').join(''):'<p class="muted">На этот день ОФП не запланирована.</p>';
  $('save').disabled=!p.length;
 }
 function readSets(items,prefix,withWeight,countFn){
@@ -317,7 +334,11 @@ $('makeReplacement').onclick=()=>{
  if((currentDay()==='Сб'||+$('week').value===7)&&kind==='full')kind='light';
  activeReplacement={date,kind,feeling,gym,...replacementPlans[kind]};
  const p=activeReplacement;
- $('replacement').innerHTML='<h3>'+p.title+'</h3><p class="muted">'+(hadOfp?'Сегодня уже записана ОФП, дополнительную нагрузку не предлагаем. ':gym==='yes'?'Учтена сегодняшняя тренировка в зале. ':'')+'Без максимальных весов, отказа и боли. Сначала согласуйте нагрузку с тренером.</p>'+(kind==='rest'?'<p>Отмена борьбы без дополнительной тренировки. В журнале будет 0 минут.</p>':p.items.map((e,i)=>'<div class="exercise"><b>'+esc(e[0])+'</b>'+detail(e[0])+'<p class="muted">Ориентир: '+e[1]+' × '+e[2]+' '+(units[e[0]]||'повт.')+'</p>'+exerciseRows(e,i,'rep_',e[1])+'</div>').join('')+'<p><label>Фактически выполнено, минут <input id="repMinutes" type="number" min="1" max="180" placeholder="Укажите после занятия" inputmode="numeric"></label></p><p><label>Усталость после тренировки, 1–10 <input id="repFatigue" type="number" min="1" max="10" placeholder="Оцените после занятия" inputmode="numeric"></label></p><p><label><input id="repQuality" type="checkbox"> Все подходы с хорошей техникой</label></p><p><label><input id="repPain" type="checkbox"> Возникла боль во время тренировки</label></p>')+'<p><button id="saveReplacement">'+(kind==='rest'?'Зафиксировать отмену и отдых':'Сохранить выполненную замену')+'</button></p>';
+ $('replacement').innerHTML='<h3>'+p.title+'</h3><p class="muted">'+(hadOfp?'ОФП уже записана. Новая нагрузка не нужна. ':gym==='yes'?'Сегодня был зал. ':'')+'Без максимальных весов и работы через боль.</p>'+
+ (kind==='rest'?'<p class="status-note">Дополнительная тренировка не нужна.</p>':p.items.map((e,i)=>'<div class="exercise"><div class="exercise-title"><strong>'+esc(e[0])+'</strong><span class="target">'+e[1]+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+detail(e[0])+exerciseRows(e,i,'rep_',e[1])+'</div>').join('')+
+ '<div class="grid"><label class="field">Фактически, мин<input id="repMinutes" type="number" min="1" max="180" placeholder="Минуты" inputmode="numeric"></label><label class="field">Усталость, 1–10<input id="repFatigue" type="number" min="1" max="10" placeholder="1–10" inputmode="numeric"></label></div>'+
+ '<label class="checkline"><input id="repQuality" type="checkbox">Техника была хорошей</label><label class="checkline"><input id="repPain" type="checkbox">Была боль</label>')+
+ '<div class="action"><button id="saveReplacement">'+(kind==='rest'?'Записать отдых':'Сохранить замену')+'</button></div>';
  $('saveReplacement').onclick=()=>{
   const a=activeReplacement;if(!a||a.date!==selectedDate())return alert('Дата или условия изменились. Подберите замену заново.');
   if(lastReplacement(a.date)||lastMat(a.date))return alert('Для этой даты отмена или борьба уже сохранена.');
@@ -337,28 +358,32 @@ $('makeReplacement').onclick=()=>{
 };
 function recommendations(){
  const latest=new Map();
- logs.filter(x=>['ofp','replacement'].includes(x.type)&&Array.isArray(x.sets)).slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).forEach(x=>{
-  for(const name of new Set(x.sets.map(s=>s.exercise))){
-   if(!latest.has(name))latest.set(name,[]);
-   const recent=latest.get(name);
-   if(recent.length<3&&!recent.some(y=>y.date===x.date))recent.push(x);
-  }
- });
+ logs.filter(x=>['ofp','replacement'].includes(x.type)&&Array.isArray(x.sets))
+ .slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id))
+ .forEach(x=>{for(const name of new Set(x.sets.map(s=>s.exercise))){
+  if(!latest.has(name))latest.set(name,[]);
+  const recent=latest.get(name);
+  if(recent.length<3&&!recent.some(y=>y.date===x.date))recent.push(x);
+ }});
  const candidates=[...latest.entries()].filter(([_,sessions])=>sessions.length===3&&sessions.every(x=>x.quality===true&&x.pain===false&&num(x.fatigue,1,4))).map(([name])=>name);
- $('progress').innerHTML='<p class="muted"><b>Прогрессия:</b> '+(candidates.length?'Можно обсудить с тренером усложнение: '+candidates.map(esc).join(', ')+'. Автоматических изменений нет.':'Для предложения нужны последние 3 занятия по упражнению с отмеченной хорошей техникой, без боли и с фактической невысокой усталостью (1–4). Программа не усложняется автоматически.')+'</p>';
+ $('progress').innerHTML=candidates.length?'<p class="status-note">Можно обсудить с тренером усложнение: '+candidates.map(esc).join(', ')+'.</p>':'';
 }
 function render(){
  const mat=logs.filter(x=>x.type==='mat'),ofp=logs.filter(x=>x.type==='ofp'),rep=logs.filter(x=>x.type==='replacement');
- const exerciseCount=logs.reduce((a,x)=>a+(x.sets?.length||0),0);
- $('stats').textContent='ОФП: '+ofp.length+' · Борьба: '+mat.length+' · Отмены: '+rep.length+' (замены: '+rep.filter(x=>x.kind!=='rest').length+', отдых: '+rep.filter(x=>x.kind==='rest').length+') · Выполнено подходов: '+exerciseCount+' · Всего минут: '+logs.reduce((a,x)=>a+(x.minutes||0),0);
+ const sets=logs.reduce((n,x)=>n+(x.sets?.length||0),0);
+ const items=[['ОФП',ofp.length],['Борьба',mat.length],['Отмены',rep.length],['Подходы',sets]];
+ $('stats').innerHTML=items.map(([label,n])=>'<div class="stat"><strong>'+n+'</strong><span>'+label+'</span></div>').join('');
+ $('historyCount').textContent=String(logs.length);
  recommendations();
  $('history').innerHTML=logs.slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).map(x=>{
-  const name=x.type==='mat'?'Борьба':x.type==='replacement'?(x.kind==='rest'?'Отмена борьбы, отдых':'Отмена борьбы, замена ОФП'):x.mode==='home'?'ОФП дома':'ОФП дома + зал';
-  const summary=x.type==='mat'?x.minutes+' мин, нагрузка '+x.rpe+', схваток '+x.bouts:x.type==='replacement'?'Фактически '+x.minutes+' мин, подходов '+x.sets.length:x.day+', неделя '+x.week+', '+x.minutes+' мин, подходов '+x.sets.length;
-  const sets=x.sets?.length?'<small>'+x.sets.map(s=>esc(s.exercise)+': '+s.count+' '+(units[s.exercise]||'повт.')+(s.kg?' / '+s.kg+' кг':'')).join('; ')+'</small>':'';
-  const warning=x.pain===true?'<p class="muted">Отмечена боль: нагрузка требует обсуждения с тренером.</p>':'';
-  return '<div class="exercise"><b>'+esc(x.date)+' · '+name+'</b><p>'+esc(summary)+'</p>'+sets+warning+'<p><button data-id="'+esc(x.id)+'" aria-label="Удалить запись '+esc(x.date)+'">Удалить</button></p></div>';
- }).join('')||'<p>Записей пока нет.</p>';
+  const name=x.type==='mat'?'Борьба':x.type==='replacement'?(x.kind==='rest'?'Отдых вместо борьбы':'Замена борьбы'):x.mode==='home'?'ОФП дома':'ОФП дома + зал';
+  const brief=x.type==='mat'?x.minutes+' мин · нагрузка '+x.rpe+' · схваток '+x.bouts:
+   x.type==='replacement'?x.minutes+' мин · '+x.sets.length+' подх.':
+   x.minutes+' мин · '+x.sets.length+' подх. · неделя '+x.week;
+  const exerciseList=x.sets?.length?'<details class="history-details"><summary>Показать подходы</summary><small>'+x.sets.map(s=>esc(s.exercise)+': '+s.count+' '+(units[s.exercise]||'повт.')+(s.kg?' · '+s.kg+' кг':'')).join('; ')+'</small></details>':'';
+  const pain=x.pain===true?'<p class="status-note warn">Отмечена боль. Сообщи тренеру.</p>':'';
+  return '<div class="history-item"><div class="history-header"><strong>'+esc(name)+'</strong><span>'+esc(x.date)+'</span></div><p>'+esc(brief)+'</p>'+exerciseList+pain+'<button class="danger" data-id="'+esc(x.id)+'" aria-label="Удалить запись '+esc(x.date)+'">Удалить</button></div>';
+ }).join('')||'<p class="muted">Записей пока нет.</p>';
  document.querySelectorAll('#history [data-id]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту запись без возможности отмены?'))persist(logs.filter(x=>x.id!==b.dataset.id));});
 }
 function download(name,data,type){const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);}
