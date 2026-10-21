@@ -217,6 +217,8 @@ function detail(name){
 }
 
 const STORE='grappling-ofp-v2',weekdays=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const exerciseDisplayNames={'Dead bug':'Мёртвый жук','Pallof press':'Жим Паллофа','Гиперэкстензия лёгкая':'Лёгкая гиперэкстензия'};
+function displayName(name){return exerciseDisplayNames[name]||name;}
 const units={'Вис с опорой':'сек','Боковая планка (сек)':'сек','Переноска гантелей (м)':'м','Лёгкая подвижность (мин)':'мин'};
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function dayOf(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(v||''))return null;const d=new Date(v+'T12:00:00');return Number.isFinite(d.getTime())&&d.getFullYear()===+v.slice(0,4)&&d.getMonth()+1===+v.slice(5,7)&&d.getDate()===+v.slice(8,10)?weekdays[d.getDay()]:null;}
@@ -366,7 +368,7 @@ function recommendations(){
   if(recent.length<3&&!recent.some(y=>y.date===x.date))recent.push(x);
  }});
  const candidates=[...latest.entries()].filter(([_,sessions])=>sessions.length===3&&sessions.every(x=>x.quality===true&&x.pain===false&&num(x.fatigue,1,4))).map(([name])=>name);
- $('progress').innerHTML=candidates.length?'<p class="status-note">Можно обсудить с тренером усложнение: '+candidates.map(esc).join(', ')+'.</p>':'';
+ $('progress').innerHTML=candidates.length?'<p class="status-note">Можно обсудить с тренером усложнение: '+candidates.map(x=>esc(displayName(x))).join(', ')+'.</p>':'';
 }
 function render(){
  const mat=logs.filter(x=>x.type==='mat'),ofp=logs.filter(x=>x.type==='ofp'),rep=logs.filter(x=>x.type==='replacement');
@@ -380,7 +382,7 @@ function render(){
   const brief=x.type==='mat'?x.minutes+' мин · нагрузка '+x.rpe+' · схваток '+x.bouts:
    x.type==='replacement'?x.minutes+' мин · '+x.sets.length+' подх.':
    x.minutes+' мин · '+x.sets.length+' подх. · неделя '+x.week;
-  const exerciseList=x.sets?.length?'<details class="history-details"><summary>Показать подходы</summary><small>'+x.sets.map(s=>esc(s.exercise)+': '+s.count+' '+(units[s.exercise]||'повт.')+(s.kg?' · '+s.kg+' кг':'')).join('; ')+'</small></details>':'';
+  const exerciseList=x.sets?.length?'<details class="history-details"><summary>Показать подходы</summary><small>'+x.sets.map(s=>esc(displayName(s.exercise))+': '+s.count+' '+(units[s.exercise]||'повт.')+(s.kg?' · '+s.kg+' кг':'')).join('; ')+'</small></details>':'';
   const pain=x.pain===true?'<p class="status-note warn">Отмечена боль. Сообщи тренеру.</p>':'';
   return '<div class="history-item"><div class="history-header"><strong>'+esc(name)+'</strong><span>'+esc(x.date)+'</span></div><p>'+esc(brief)+'</p>'+exerciseList+pain+'<button class="danger" data-id="'+esc(x.id)+'" aria-label="Удалить запись '+esc(x.date)+'">Удалить</button></div>';
  }).join('')||'<p class="muted">Записей пока нет.</p>';
