@@ -285,7 +285,7 @@ function exerciseRows(e,i,prefix,setCount){
 function drawExercises(){
  const day=currentDay(),mode=$('mode').value,w=+$('week').value,p=(plan[mode]||{})[day]||[];
  $('exercises').innerHTML=p.length?p.map((e,i)=>
- '<div class="exercise"><div class="exercise-title"><strong>'+esc(e[0])+'</strong><span class="target">'+(w===7?1:e[1])+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+
+ '<div class="exercise"><div class="exercise-title"><strong>'+esc(displayName(e[0]))+'</strong><span class="target">'+(w===7?1:e[1])+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+
  detail(e[0])+exerciseRows(e,i,'',w===7?1:e[1])+'</div>').join(''):'<p class="muted">На этот день ОФП не запланирована.</p>';
  $('save').disabled=!p.length;
 }
@@ -337,7 +337,7 @@ $('makeReplacement').onclick=()=>{
  activeReplacement={date,kind,feeling,gym,...replacementPlans[kind]};
  const p=activeReplacement;
  $('replacement').innerHTML='<h3>'+p.title+'</h3><p class="muted">'+(hadOfp?'ОФП уже записана. Новая нагрузка не нужна. ':gym==='yes'?'Сегодня был зал. ':'')+'Без максимальных весов и работы через боль.</p>'+
- (kind==='rest'?'<p class="status-note">Дополнительная тренировка не нужна.</p>':p.items.map((e,i)=>'<div class="exercise"><div class="exercise-title"><strong>'+esc(e[0])+'</strong><span class="target">'+e[1]+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+detail(e[0])+exerciseRows(e,i,'rep_',e[1])+'</div>').join('')+
+ (kind==='rest'?'<p class="status-note">Дополнительная тренировка не нужна.</p>':p.items.map((e,i)=>'<div class="exercise"><div class="exercise-title"><strong>'+esc(displayName(e[0]))+'</strong><span class="target">'+e[1]+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+detail(e[0])+exerciseRows(e,i,'rep_',e[1])+'</div>').join('')+
  '<div class="grid"><label class="field">Фактически, мин<input id="repMinutes" type="number" min="1" max="180" placeholder="Минуты" inputmode="numeric"></label><label class="field">Усталость, 1–10<input id="repFatigue" type="number" min="1" max="10" placeholder="1–10" inputmode="numeric"></label></div>'+
  '<label class="checkline"><input id="repQuality" type="checkbox">Техника была хорошей</label><label class="checkline"><input id="repPain" type="checkbox">Была боль</label>')+
  '<div class="action"><button id="saveReplacement">'+(kind==='rest'?'Записать отдых':'Сохранить замену')+'</button></div>';
