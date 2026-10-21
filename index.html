@@ -22,7 +22,7 @@ const tech={
 'Лёгкая подвижность (мин)':['floor','Спокойные движения в комфортной амплитуде, без боли.','Не растягиваться через силу.'],
 'Подвижность плеч и таза (мин)':['floor','Плавно двигать плечами и тазом в комфортной амплитуде.','Избегать резких движений.']
 };
-const techniqueLinks={"Pallof press":"https://musclewiki.com/exercise/cable-pallof-press","Dead bug":"https://musclewiki.com/exercise/dead-bug","Гоблет-приседание":"https://musclewiki.com/exercise/dumbbell-goblet-squat","Приседания без веса":"https://musclewiki.com/exercises/glutes/bodyweight","Ягодичный мост":"https://musclewiki.com/exercises/glutes/bodyweight"};
+const techniqueLinks={"Pallof press":"https://musclewiki.com/exercise/cable-pallof-press","Dead bug":"https://musclewiki.com/exercise/dead-bug","Гоблет-приседание":"https://musclewiki.com/exercise/dumbbell-goblet-squat","Приседания без веса":"https://musclewiki.com/ru-ru/exercise/bodyweight-squat","Ягодичный мост":"https://musclewiki.com/exercise/glute-bridge","Отжимания с опорой":"https://musclewiki.com/exercise/incline-push-up","Отжимания":"https://musclewiki.com/exercise/push-up","Румынская тяга с лёгкими гантелями":"https://musclewiki.com/exercise/dumbbell-romanian-deadlift","Горизонтальная тяга блока":"https://musclewiki.com/exercise/machine-seated-cable-row","Вертикальная тяга блока":"https://musclewiki.com/exercise/machine-pulldown","Переноска гантелей (м)":"https://musclewiki.com/ru-ru/exercise/dumbbell-farmer-walk","Боковая планка (сек)":"https://musclewiki.com/exercise/elbow-side-plank","Сплит-приседания":"https://musclewiki.com/exercise/split-squat"};
 function detail(name){const t=tech[name]||['floor','Выполняйте плавно в комфортной амплитуде.','Не выполняйте через боль.'];const url=techniqueLinks[name];return '<div class="techtext" style="margin-top:10px"><b>Техника:</b> '+esc(t[1])+'<br><b>Избегайте:</b> '+esc(t[2])+'</div>'+(url?'<p><a class="techlink" href="'+url+'" target="_blank" rel="noopener noreferrer">▶ Смотреть технику ↗</a></p>':'<p class="muted">Видео пока не проверено. Попросите тренера показать движение.</p>')}
 
 
@@ -35,7 +35,7 @@ function validSets(s,allowEmpty=false){return Array.isArray(s)&&s.length<120&&(a
 function validEntry(x){
  if(!x||typeof x!=='object'||Array.isArray(x)||typeof x.id!=='string'||x.id.length>100||!x.id||!dayOf(x.date))return false;
  if(x.type==='mat')return num(x.minutes,1,240)&&num(x.rpe,1,10)&&num(x.bouts,0,100);
- if(x.type==='ofp')return ['home','mixed'].includes(x.mode)&&dayOf(x.date)===x.day&&num(x.week,1,8)&&num(x.minutes,1,240)&&num(x.fatigue,1,10)&&validSets(x.sets);
+ if(x.type==='ofp')return ['home','mixed'].includes(x.mode)&&weekdays.includes(x.day)&&num(x.week,1,8)&&num(x.minutes,1,240)&&num(x.fatigue,1,10)&&validSets(x.sets);
  if(x.type==='replacement')return ['full','light','rest'].includes(x.kind)&&validSets(x.sets,true)&&num(x.minutes,0,240)&&num(x.fatigue,1,10)&&(x.kind!=='rest'||(x.minutes===0&&x.sets.length===0));
  return false;
 }
@@ -87,7 +87,7 @@ function readSets(items,prefix,withWeight,countFn){
  items.forEach((e,i)=>{for(let j=0;j<countFn(e);j++){
   if(!$(prefix+'c'+i+'_'+j).checked)continue;
   const repetitions=Number($(prefix+'n'+i+'_'+j).value),weight=withWeight?Number($(prefix+'k'+i+'_'+j).value):0;
-  if(!Number.isFinite(repetitions)||repetitions<=0||repetitions>600||!Number.isFinite(weight)||weight<0||weight>250)throw Error('Проверьте повторения, секунды и вес. Числа должны быть положительными.');
+  if(!Number.isFinite(repetitions)||!Number.isInteger(repetitions)||repetitions<=0||repetitions>600||!Number.isFinite(weight)||weight<0||weight>250)throw Error('Проверьте повторения, секунды и вес. Числа должны быть положительными.');
   sets.push({exercise:e[0],set:j+1,count:repetitions,kg:weight});
  }});
  return sets;
@@ -99,7 +99,7 @@ $('save').onclick=()=>{
  const mode=$('mode').value,day=currentDay(),week=+$('week').value,items=(plan[mode]||{})[day]||[];
  if(!items.length)return alert('В этот день нет плановой ОФП.');
  const minutes=Number($('minutes').value),fatigue=Number($('fatigue').value);
- if(!num(minutes,1,240)||!num(fatigue,1,10))return alert('Проверьте продолжительность (1–240 мин) и усталость (1–10).');
+ if(!num(minutes,1,240)||!Number.isInteger(minutes)||!num(fatigue,1,10))return alert('Проверьте продолжительность (1–240 мин) и усталость (1–10).');
  let sets;try{sets=readSets(items,'',true,e=>week===7?1:e[1]);}catch(e){return alert(e.message);}
  if(!sets.length)return alert('Отметьте только действительно выполненные подходы.');
  if($('pain').checked&&!confirm('Отмечена боль. Рекомендуется прекратить нагрузку и сообщить тренеру или взрослому. Сохранить уже выполненное?'))return;
@@ -109,7 +109,7 @@ $('save').onclick=()=>{
 $('savemat').onclick=()=>{
  const date=selectedDate(),minutes=Number($('matmin').value),rpe=Number($('rpe').value),bouts=Number($('bouts').value);
  if(lastReplacement(date)||lastMat(date)||currentDay()==='Вс')return alert('Борьба на эту дату недоступна для повторной записи.');
- if(!num(minutes,1,240)||!num(rpe,1,10)||!num(bouts,0,100)||!Number.isInteger(bouts))return alert('Проверьте минуты (1–240), нагрузку (1–10) и количество схваток.');
+ if(!num(minutes,1,240)||!Number.isInteger(minutes)||!num(rpe,1,10)||!num(bouts,0,100)||!Number.isInteger(bouts))return alert('Проверьте минуты (1–240), нагрузку (1–10) и количество схваток.');
  if(addEntry({id:entryId(),type:'mat',date,minutes,rpe,bouts}))alert('Борьба сохранена.');
 };
 const replacementPlans={
@@ -136,7 +136,7 @@ $('makeReplacement').onclick=()=>{
   let sets=[],minutes=0,quality=false,pain=false;
   if(a.kind!=='rest'){
    minutes=Number($('repMinutes').value);
-   if(!$('repMinutes').value||!num(minutes,1,180))return alert('Укажите фактически затраченные минуты (1–180).');
+   if(!$('repMinutes').value||!num(minutes,1,180)||!Number.isInteger(minutes))return alert('Укажите фактически затраченные минуты (1–180).');
    try{sets=readSets(a.items,'rep_',false,e=>e[1]);}catch(e){return alert(e.message);}
    if(!sets.length)return alert('Отметьте только выполненные подходы.');
    quality=$('repQuality').checked;pain=$('repPain').checked;
@@ -196,6 +196,6 @@ $('import').onchange=async e=>{
 $('date').value=new Date().toLocaleDateString('sv-SE');
 $('week').innerHTML=Array.from({length:8},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
 if(loadError){$('stats').textContent='Ошибка чтения истории! Экспортируйте исходные данные JSON, затем восстановите исправную резервную копию.';}
-draw();syncDate($('date').value);render();
+draw();syncDate($('date').value);render();if(loadError){$('stats').textContent='Ошибка чтения истории. Экспортируйте исходный JSON и восстановите исправную копию. Новые записи заблокированы до восстановления.';}
 
 </script></body></html>
