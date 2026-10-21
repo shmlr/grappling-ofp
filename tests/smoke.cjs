@@ -93,6 +93,21 @@ check('Malformed saved journal is not overwritten',()=>{
 check('Invalid duration does not write an OFP record',()=>{
  const a=boot();date(a,'2026-10-21');a.el('c0_0').checked=true;a.el('minutes').value='-3';a.el('save').onclick();assert.equal(a.logs().length,0);
 });
+
+check('Deload week never proposes a heavy replacement',()=>{
+ const a=boot();date(a,'2026-10-21');a.el('week').value='7';a.el('week').onchange();a.el('makeReplacement').onclick();
+ assert.ok(a.el('replacement').innerHTML.includes('Лёгкая работа'));
+});
+check('Duplicate stored IDs block writes without losing old data',()=>{
+ const entry={id:'repeat',type:'mat',date:'2026-10-21',minutes:80,rpe:5,bouts:0};
+ const a=boot([entry,entry]);assert.ok(a.el('stats').textContent.includes('Ошибка чтения истории'));
+});
+check('Progress recommendation stops after a recent painful session',()=>{
+ const dates=['2026-10-18','2026-10-19','2026-10-20','2026-10-21'];
+ const old=dates.map((d,i)=>({id:'safe-'+i,type:'ofp',date:d,mode:'home',day:'Пн',week:1,minutes:15,fatigue:3,quality:true,pain:i===3,sets:[{exercise:'Dead bug',set:1,count:6,kg:0}]}));
+ const a=boot(old);assert.ok(!a.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Dead bug'));
+ const b=boot(old.slice(0,3));assert.ok(b.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Dead bug'));
+});
 if(failures.length){
   console.error(JSON.stringify(failures,null,2));
   process.exitCode=1;
