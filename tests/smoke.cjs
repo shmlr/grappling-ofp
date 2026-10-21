@@ -112,8 +112,8 @@ check('Duplicate stored IDs block writes without losing old data',()=>{
 check('Progress recommendation stops after a recent painful session',()=>{
  const dates=['2026-10-18','2026-10-19','2026-10-20','2026-10-21'];
  const old=dates.map((d,i)=>({id:'safe-'+i,type:'ofp',date:d,mode:'home',day:'Пн',week:1,minutes:15,fatigue:3,quality:true,pain:i===3,sets:[{exercise:'Dead bug',set:1,count:6,kg:0}]}));
- const a=boot(old);assert.ok(!a.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Dead bug'));
- const b=boot(old.slice(0,3));assert.ok(b.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Dead bug'));
+ const a=boot(old);assert.ok(!a.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Мёртвый жук'));
+ const b=boot(old.slice(0,3));assert.ok(b.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Мёртвый жук'));
 });
 if(failures.length){
   console.error(JSON.stringify(failures,null,2));
