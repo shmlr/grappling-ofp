@@ -1,4 +1,192 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grappling OFP</title><style>body{font:16px system-ui;margin:0;background:#f2f5fa;color:#17283e}header{background:#142c49;color:white;padding:24px}main{max-width:760px;margin:auto;padding:15px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0}button,select,input,textarea{font:inherit;padding:9px;border:1px solid #c8d4e3;border-radius:9px;max-width:100%}button{background:#215fc9;color:white;cursor:pointer}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.muted{color:#607187;font-size:13px}.exercise{border-top:1px solid #e3e8f0;padding:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.grid label{display:block;font-size:13px}h1{margin:0}</style></head><body><header><h1>GRAPPLING OFP</h1>Сила · Функциональность · Журнал</header><main><div class="card"><div class="date-bar"><label>Дата занятий<input type="date" id="date"></label><label>День недели<output id="weekday">—</output></label></div><p class="muted">Дата общая для ОФП, борьбы и её замены.</p></div><div class="card"><b>Программа</b><p><select id="mode"><option value="home">Только дома</option><option value="mixed">Дом + зал</option></select></p><div id="schedule"></div></div><div class="card"><h2>Запись ОФП</h2><div class="grid"><input type="hidden" id="day" value="Пн"><div><label>Неделя</label><select id="week"></select></div></div><p class="muted">Отмечайте только выполненное. Без отказа и максимальных весов. Первые две недели освоение техники; седьмая облегчённая. При боли прекратите занятие и сообщите взрослому или тренеру.</p><div id="exercises"></div><div class="grid"><div><label>Минут</label><input id="minutes" type="number" min="1" value="20"></div><div><label>Усталость 1–10</label><input id="fatigue" type="number" min="1" max="10" value="3"></div></div><p><label><input type="checkbox" id="quality"> Все отмеченные подходы выполнены с хорошей техникой</label></p><p><label><input type="checkbox" id="pain"> Возникла боль во время занятия</label></p><p><button id="save">Сохранить ОФП</button></p></div><div class="card"><h2>Если борьбы в выбранный день нет</h2><p class="muted">Замена необязательна. При боли или выраженной усталости отдых. Если уже была ОФП или зал, вторую тяжёлую тренировку не добавляем.</p><div class="grid"><div><label>Самочувствие</label><select id="replaceFeeling"><option value="good">Хорошее</option><option value="medium">Умеренная усталость</option><option value="tired">Сильная усталость / боль</option></select></div><div><label>Сегодня был зал?</label><select id="replaceGym"><option value="no">Нет</option><option value="yes">Да</option></select></div></div><p><button id="makeReplacement">Подобрать замену</button></p><div id="replacement" aria-live="polite"></div></div><div class="card"><h2>Борьба</h2><p id="matStatus" class="status-note">Статус: тренировка не отмечена</p><div class="grid"><input type="hidden" id="matdate"><div><label>Минут</label><input id="matmin" type="number" value="80"></div><div><label>Нагрузка 1–10</label><input id="rpe" type="number" min="1" max="10" value="5"></div><div><label>Схваток</label><input id="bouts" type="number" min="0" value="0"></div></div><p><button id="savemat">Сохранить борьбу</button></p></div><div class="card"><h2>История и прогресс</h2><div id="stats"></div><div id="progress"></div><div id="history"></div><p><button id="json">Резервная копия JSON</button> <button id="csv">Экспорт CSV</button></p><label>Импорт копии JSON <input type="file" id="import" accept=".json"></label></div><p class="muted">Записи хранятся только в браузере устройства. Между телефонами пока не синхронизируются. Не публикуйте личные данные несовершеннолетнего в GitHub. Программу силовой подготовки согласуйте с тренером.</p></main><script>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grappling OFP</title><style>
+
+:root{color-scheme:light;--ink:#182d49;--muted:#596d84;--line:#dde5ef;--paper:#fff;--bg:#f3f6fa;--primary:#215eb4}
+*{box-sizing:border-box}
+html{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.48}
+header{background:#152e4d;color:#fff;padding:20px 16px 18px}
+.site-brand,main{max-width:780px;margin:0 auto}
+header h1{font-size:23px;letter-spacing:.035em;margin:0;font-weight:800;line-height:1.1}
+header p{font-size:13px;color:#d1dceb;margin:5px 0 0}
+main{padding:12px 12px 28px}
+.card{background:var(--paper);border:1px solid #e9eef4;border-radius:16px;padding:17px;margin:0 0 12px;box-shadow:0 2px 9px #19345109;min-width:0}
+h2{font-size:19px;line-height:1.2;margin:0 0 12px;font-weight:750;letter-spacing:-.01em}
+h3{font-size:16px;line-height:1.3;margin:12px 0 7px}
+p{margin:9px 0}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
+.footnote{max-width:720px;margin:8px auto 0;padding:0 4px;color:var(--muted);font-size:12px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,138px),1fr));gap:12px;min-width:0}
+.grid>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:5px;color:#405673;font-size:13px;font-weight:600;min-width:0}
+.field>*:last-child{font-weight:400}
+input,select,button{font:inherit;min-width:0;max-width:100%}
+input:not([type=checkbox]):not([type=hidden]),select{display:block;width:100%;min-height:43px;border:1px solid #c6d2e2;background:#fff;border-radius:9px;padding:9px 10px;color:var(--ink)}
+input[type=date]{max-width:100%}
+input:disabled,select:disabled{color:#6d7d91;background:#f1f4f7}
+button{border:0;border-radius:10px;background:var(--primary);color:#fff;padding:11px 15px;min-height:43px;font-weight:700;cursor:pointer;line-height:1.3;text-align:center}
+button:hover:not(:disabled){background:#194e99}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #eeaf41;outline-offset:3px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.actions button{flex:1 1 170px}
+.action{margin-top:14px}
+.action button{width:100%;max-width:360px}
+.date-bar{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:13px;align-items:end}
+#weekday{display:flex;align-items:center;min-height:43px;padding:9px 10px;background:#f0f5fc;border-radius:9px;color:#173e70;font-size:15px;font-weight:800}
+.program-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.program-head h2{margin:0}
+.program-head select{max-width:200px}
+.today-summary{margin:12px 0 2px;color:#294563;font-size:14px}
+.quiet-details{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+.quiet-details>summary,.exercise-info>summary{cursor:pointer;font-weight:600;color:#1c5da8;font-size:13px;list-style-position:inside}
+.quiet-details p{font-size:13px;margin:7px 0}
+.inline-week{display:flex;gap:10px;align-items:center;font-weight:700;font-size:14px;margin:12px 0 4px}
+.inline-week select{max-width:100px}
+.exercise{border-top:1px solid var(--line);padding:13px 0;min-width:0}
+.exercise:first-child{border-top:0}
+.exercise-title{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;margin:0 0 5px}
+.exercise-title strong{font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.target{color:var(--muted);font-size:12px;white-space:nowrap}
+.exercise-info{margin:5px 0 11px}
+.exercise-info .techtext{color:#405675;font-size:13px;line-height:1.5;padding:7px 0}
+.exercise-info .techtext p{margin:5px 0}
+.techlink{display:inline-block;padding:8px 11px;border:1px solid #a9c6ec;color:#16559e;border-radius:9px;text-decoration:none;font-weight:700;font-size:13px;max-width:100%;overflow-wrap:anywhere}
+.techlink:hover{background:#ecf4ff}
+.set-row{display:grid;grid-template-columns:minmax(76px,1.1fr) minmax(68px,.85fr) minmax(68px,.85fr);gap:8px;align-items:end;padding:7px 0;min-width:0}
+.set-row.two{grid-template-columns:minmax(90px,1fr) minmax(90px,1fr)}
+.set-row+.set-row{border-top:1px dashed #e5ebf3}
+.set-check{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;min-height:43px;white-space:nowrap}
+.set-check input{flex:0 0 19px;width:19px;height:19px;margin:0;accent-color:var(--primary)}
+.set-field{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:600;color:var(--muted);min-width:0}
+.set-field input[type=number]{width:100%;min-height:40px;padding:7px 7px;font-size:15px}
+.checkline{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45;margin:10px 0;cursor:pointer}
+.checkline input{width:19px;height:19px;flex:0 0 19px;margin:0;accent-color:var(--primary)}
+.status-note{background:#edf3fa;color:#23415e;border-radius:10px;padding:10px 12px;font-size:13px;margin:10px 0}
+.status-note.warn{background:#fff2de;color:#79521d}
+#replacement:empty{display:none}
+#replacement .exercise{padding:11px 0}
+#replacement .field{margin:12px 0}
+#stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.stat{text-align:center;border:1px solid var(--line);border-radius:11px;padding:10px 5px;min-width:0}
+.stat strong{display:block;color:var(--ink);font-size:20px;font-weight:800;line-height:1.1}
+.stat span{display:block;color:var(--muted);font-size:11px;line-height:1.3;margin-top:5px;overflow-wrap:anywhere}
+#progress{font-size:13px}
+#history .history-item{border-top:1px solid var(--line);padding:12px 0;min-width:0}
+#history .history-item:first-child{border-top:0}
+.history-header{display:flex;justify-content:space-between;align-items:baseline;gap:7px;flex-wrap:wrap}
+.history-header strong{font-size:14px}
+.history-header span{font-size:12px;color:var(--muted)}
+.history-item p{font-size:13px;margin:4px 0 7px}
+.history-details{margin:7px 0}
+.history-details summary{color:#225b9d;cursor:pointer;font-size:12px}
+.history-details small{display:block;line-height:1.6;color:#55657a;margin-top:5px;overflow-wrap:anywhere}
+.danger{border:1px solid #ddbdbe;background:#fff;color:#9b323b;font-size:12px;font-weight:700;min-height:34px;padding:6px 10px}
+.danger:hover:not(:disabled){background:#fff1f1}
+.backup-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.backup-actions button{flex:1 1 150px;background:#e8f0fa;color:#164987}
+.backup-actions button:hover:not(:disabled){background:#dbe9f9}
+#import{margin-top:5px;font-size:13px;padding:8px;width:100%}
+.visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:420px){
+ main{padding:10px}
+ .card{padding:13px 12px;margin-bottom:10px;border-radius:14px}
+ h2{font-size:18px}
+ header{padding:18px 13px}
+ .date-bar{gap:9px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .grid.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .grid.three .field{font-size:11px}
+ .grid.three input{padding:8px 6px}
+ .program-head select{max-width:175px}
+ .set-row{gap:5px;grid-template-columns:minmax(69px,1fr) minmax(64px,.8fr) minmax(64px,.8fr)}
+ .set-check{font-size:12px;gap:4px}
+ .set-field{font-size:10px}
+ .set-field input[type=number]{font-size:14px}
+ #stats{gap:5px}
+ .stat{padding:9px 3px}
+ .stat strong{font-size:19px}
+ .stat span{font-size:10px}
+}
+@media(max-width:340px){
+ .program-head{align-items:stretch}
+ .program-head select{max-width:100%}
+ .set-row{grid-template-columns:minmax(64px,1fr) minmax(60px,.85fr) minmax(60px,.85fr)}
+ .date-bar{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
+}
+
+</style></head><body>
+<header><div class="site-brand"><h1>GRAPPLING OFP</h1><p>Тренировки и журнал</p></div></header>
+<main>
+<section class="card">
+  <div class="date-bar">
+    <label class="field" for="date">Дата<input type="date" id="date"></label>
+    <div class="field">День недели<output id="weekday">—</output></div>
+  </div>
+</section>
+<section class="card">
+  <div class="program-head">
+    <h2>Программа</h2>
+    <label class="visually-hidden" for="mode">Место тренировки</label>
+    <select id="mode"><option value="home">Дома</option><option value="mixed">Дома + зал</option></select>
+  </div>
+  <div class="today-summary" id="todaySummary"></div>
+  <details class="quiet-details"><summary>Расписание недели</summary><div id="schedule"></div></details>
+</section>
+<section class="card">
+  <h2>ОФП</h2>
+  <input type="hidden" id="day" value="Пн">
+  <label class="inline-week" for="week">Неделя программы <select id="week"></select></label>
+  <p class="muted">Отмечай только выполненные подходы.</p>
+  <div id="exercises"></div>
+  <div class="grid">
+    <label class="field" for="minutes">Длительность, мин<input id="minutes" type="number" min="1" max="240" value="20" inputmode="numeric"></label>
+    <label class="field" for="fatigue">Усталость, 1–10<input id="fatigue" type="number" min="1" max="10" value="3" inputmode="numeric"></label>
+  </div>
+  <label class="checkline"><input type="checkbox" id="quality">Техника всех отмеченных подходов была хорошей</label>
+  <label class="checkline"><input type="checkbox" id="pain">Во время занятия была боль</label>
+  <div class="action"><button id="save">Сохранить ОФП</button></div>
+</section>
+<section class="card">
+  <h2>Замена борьбы</h2>
+  <p class="muted">Если борьбы не было, выбери самочувствие. При боли или сильной усталости лучше отдых.</p>
+  <div class="grid">
+    <label class="field" for="replaceFeeling">Самочувствие
+      <select id="replaceFeeling"><option value="good">Хорошее</option><option value="medium">Есть усталость</option><option value="tired">Сильная усталость / боль</option></select>
+    </label>
+    <label class="field" for="replaceGym">Сегодня был зал?
+      <select id="replaceGym"><option value="no">Нет</option><option value="yes">Да</option></select>
+    </label>
+  </div>
+  <div class="action"><button id="makeReplacement">Подобрать замену</button></div>
+  <div id="replacement" aria-live="polite"></div>
+</section>
+<section class="card">
+  <h2>Борьба</h2>
+  <p id="matStatus" class="status-note">Не записано</p>
+  <input type="hidden" id="matdate">
+  <div class="grid three">
+    <label class="field" for="matmin">Минут<input id="matmin" type="number" min="1" max="240" value="80" inputmode="numeric"></label>
+    <label class="field" for="rpe">Нагрузка, 1–10<input id="rpe" type="number" min="1" max="10" value="5" inputmode="numeric"></label>
+    <label class="field" for="bouts">Схваток<input id="bouts" type="number" min="0" max="100" value="0" inputmode="numeric"></label>
+  </div>
+  <div class="action"><button id="savemat">Сохранить борьбу</button></div>
+</section>
+<section class="card">
+  <h2>Прогресс</h2>
+  <div id="stats"></div>
+  <div id="progress"></div>
+  <details class="quiet-details" id="historyDetails">
+    <summary>Журнал (<span id="historyCount">0</span>)</summary>
+    <div id="history"></div>
+  </details>
+  <details class="quiet-details"><summary>Экспорт и резервная копия</summary>
+    <div class="backup-actions"><button id="json">Скачать JSON</button><button id="csv">Скачать CSV</button></div>
+    <label class="field" for="import">Восстановить из JSON<input type="file" id="import" accept=".json,application/json"></label>
+    <p class="muted">Восстановление заменяет весь текущий журнал.</p>
+  </details>
+</section>
+<p class="footnote">Данные хранятся только в этом браузере. Для переноса на другое устройство используй JSON. Нагрузку согласовывай с тренером.</p>
+</main><script>
 const $=x=>document.getElementById(x),days=['Пн','Вт','Ср','Чт','Пт'],plan={home:{'Пн':[['Вис с опорой',2,10],['Dead bug',2,6]],'Вт':[['Приседания без веса',2,8],['Отжимания с опорой',2,8],['Подтягивания с помощью',2,4],['Ягодичный мост',2,10]],'Ср':[['Подвижность плеч и таза',1,10],['Гиперэкстензия лёгкая',1,8]],'Чт':[['Сплит-приседания',2,8],['Подтягивания с помощью',2,4],['Боковая планка (сек)',2,15],['Ягодичный мост',2,10]],'Пт':[['Лёгкая подвижность (мин)',1,10]]},mixed:{'Пн':[['Вис с опорой',1,10],['Dead bug',1,6]],'Вт':[['Гоблет-приседание',2,8],['Горизонтальная тяга блока',2,10],['Отжимания',2,8],['Румынская тяга с лёгкими гантелями',2,8],['Dead bug',2,6]],'Ср':[['Подвижность плеч и таза',1,10]],'Чт':[['Невысокие прыжки',2,3],['Сплит-приседания',2,8],['Вертикальная тяга блока',2,10],['Pallof press',2,8],['Переноска гантелей (м)',2,20]],'Пт':[['Лёгкая подвижность (мин)',1,10]]}};
 
 const tech={
