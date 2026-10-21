@@ -21,6 +21,18 @@ jobs:
         uses: actions/checkout@v4
       - name: Run regression checks
         run: node tests/smoke.cjs
+      - name: Browser layout QA
+        run: |
+          npm install --no-save --no-package-lock playwright-core@1.55.0
+          CAPTURE_UI=1 node tests/layout.cjs
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-screenshots
+          path: artifacts/*.jpg
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
