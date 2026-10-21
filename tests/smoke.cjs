@@ -41,6 +41,13 @@ function date(app,value){app.el('date').onchange({target:{value}});}
 check('Initial render and valid date',()=>{
  const a=boot();assert.ok(a.el('schedule').innerHTML);assert.ok(a.el('weekday').textContent);
 });
+check('Mobile UI structure has one date and expandable help',()=>{
+ const a=boot();
+ assert.ok(a.el('todaySummary').innerHTML);
+ assert.ok(html.includes('class="exercise-info"')===false || html.includes('function detail(name)'));
+ assert.ok(a.el('exercises').innerHTML.includes('Техника и ошибки'));
+ assert.ok(html.includes('id="historyDetails"'));
+});
 check('One date drives weekdays and all training modes',()=>{
  const a=boot();date(a,'2026-10-21');assert.equal(a.el('weekday').textContent,'Ср');assert.equal(a.el('day').value,'Ср');assert.equal(a.el('matdate').value,'2026-10-21');
 });
@@ -83,7 +90,7 @@ check('Sunday offers no accidental mat, replacement or OFP',()=>{
 });
 check('Legacy backups with mismatched day label are preserved',()=>{
  const old=[{id:'legacy-1',type:'ofp',date:'2026-10-21',mode:'home',day:'Пн',week:1,sets:[{exercise:'Dead bug',set:1,count:6,kg:0}],minutes:20,fatigue:3}];
- const a=boot(old);assert.ok(a.el('stats').textContent.includes('ОФП: 1'));assert.equal(a.logs().length,1);
+ const a=boot(old);assert.ok(a.el('stats').innerHTML.includes('<strong>1</strong><span>ОФП</span>'));assert.equal(a.logs().length,1);
 });
 check('Malformed saved journal is not overwritten',()=>{
  const a=boot('{broken json');assert.ok(a.el('stats').textContent.includes('Ошибка чтения истории'));
