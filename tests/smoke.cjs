@@ -47,8 +47,8 @@ check('One date drives weekdays and all training modes',()=>{
 check('Canceled grappling logs actual minutes and no mat session',()=>{
  const a=boot();date(a,'2026-10-21');a.el('makeReplacement').onclick();
  assert.ok(a.el('replacement').innerHTML.includes('repMinutes'));
- a.el('rep_c0_0').checked=true;a.el('repMinutes').value='23';a.el('saveReplacement').onclick();
- assert.equal(a.logs()[0].type,'replacement');assert.equal(a.logs()[0].minutes,23);
+ a.el('rep_c0_0').checked=true;a.el('repMinutes').value='23';a.el('repFatigue').value='4';a.el('saveReplacement').onclick();
+ assert.equal(a.logs()[0].type,'replacement');assert.equal(a.logs()[0].minutes,23);assert.equal(a.logs()[0].fatigue,4);
  assert.equal(a.logs().filter(x=>x.type==='mat').length,0);
  assert.equal(a.el('matmin').value,0);assert.equal(a.el('savemat').disabled,true);
 });
