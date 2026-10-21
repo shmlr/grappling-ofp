@@ -24,6 +24,7 @@ const run=async()=>{
   const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
+  page.on('dialog',dialog=>dialog.accept());
   await page.goto(url,{waitUntil:'load'});
   await page.locator('#date').fill('2026-10-21');
   assert.equal(await page.locator('#weekday').innerText(),'Ср');
@@ -69,8 +70,17 @@ const run=async()=>{
     await page.screenshot({path:file,type:'jpeg',quality:65,fullPage:false});
     if(process.env.CAPTURE_UI==='1')console.log('UI_REPLACEMENT_JPEG_BASE64='+fs.readFileSync(file).toString('base64'));
   }
+  await page.locator('#rep_c0_0').check();
+  await page.locator('#repMinutes').fill('21');
+  await page.locator('#repFatigue').fill('3');
+  await page.locator('#saveReplacement').click();
+  await page.locator('#historyDetails').evaluate(node=>node.open=true);
+  assert.ok((await page.locator('#history').innerText()).includes('Замена борьбы'),'Replacement is visible in journal');
+  await scan('populated-journal');
   const longTexts=['Усталость, 1–10','Техника и ошибки','Замена борьбы','Сохранить ОФП'];
   for(const s of longTexts)assert.ok((await page.locator('body').innerText()).includes(s),'Missing text: '+s);
+  assert.equal(await page.locator('#matmin').inputValue(),'0');
+  assert.ok(await page.locator('#savemat').isDisabled());
   assert.deepEqual(errors,[],'Browser errors at '+width+': '+errors.join(';'));
   await page.close();
  }
