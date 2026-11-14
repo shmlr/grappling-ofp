@@ -1,0 +1,19 @@
+name: Verify Grappling OFP changes
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Smoke tests
+        run: node tests/smoke.cjs
+      - name: Install browser test helper
+        run: npm install --no-save --no-package-lock playwright-core@1.55.0
+      - name: Responsive Chromium layout checks
+        run: node tests/layout.cjs
