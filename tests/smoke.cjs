@@ -8,10 +8,11 @@ assert.ok(script,'Inline application script exists');
 assert.equal((html.match(/id="date"/g)||[]).length,1,'Exactly one visible date input');
 assert.ok(!html.includes('function viz(kind)'),'Unused SVG exercise sketches removed');
 const failures=[];
-function boot(seed=[]){
-  const defaults={mode:'home',date:'',matdate:'',day:'Пн',week:'1',minutes:'20',fatigue:'3',matmin:'80',rpe:'5',bouts:'0',replaceFeeling:'good',replaceGym:'no'};
+function boot(seed=[],adultSeed=[]){
+  const defaults={mode:'home',session:'',date:'',matdate:'',day:'Пн',week:'1',minutes:'20',fatigue:'3',matmin:'80',rpe:'5',bouts:'0',replaceFeeling:'good',adultMode:'normal',adultMinutes:'15',adultFatigue:'3'};
   const elements=new Map(),alerts=[],store=new Map();
   if(seed!==null)store.set('grappling-ofp-v2',typeof seed==='string'?seed:JSON.stringify(seed));
+  if(adultSeed!==null)store.set('grappling-adult-v1',typeof adultSeed==='string'?adultSeed:JSON.stringify(adultSeed));
   function el(id){
     if(elements.has(id))return elements.get(id);
     const x={id,value:defaults[id]??'',checked:false,disabled:false,textContent:'',className:'',title:'',files:[],onclick:null,addEventListener(type,fn){this['on'+type]=fn;}};
@@ -31,7 +32,7 @@ function boot(seed=[]){
   const localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
   const context={document,localStorage,Date,Math,Number,String,Array,Set,Map,JSON,console,URL:{createObjectURL(){return'blob:test';},revokeObjectURL(){}},Blob,alert:m=>alerts.push(m),confirm:()=>true,setTimeout:()=>{}};
   vm.runInNewContext(script,context,{timeout:1500});
-  return {el,store,alerts,logs:()=>JSON.parse(store.get('grappling-ofp-v2')||'[]')};
+  return {el,store,alerts,logs:()=>JSON.parse(store.get('grappling-ofp-v2')||'[]'),adultLogs:()=>JSON.parse(store.get('grappling-adult-v1')||'[]')};
 }
 function check(title,fn){
   try{fn();console.log('PASS '+title);}
@@ -45,7 +46,9 @@ check('Mobile UI structure has one date and expandable help',()=>{
  const a=boot();
  assert.ok(a.el('todaySummary').innerHTML);
  assert.ok(html.includes('class="exercise-info"')===false || html.includes('function detail(name)'));
+ a.el('session').value='A';a.el('session').onchange();
  assert.ok(a.el('exercises').innerHTML.includes('Техника и ошибки'));
+ assert.ok(a.el('adultRoutine').innerHTML.includes('Вставания со стула'));
  assert.ok(html.includes('id="historyDetails"'));
 });
 check('One date drives weekdays and all training modes',()=>{
@@ -68,13 +71,15 @@ check('Rest logs zero minutes and zero sets',()=>{
  assert.equal(a.logs()[0].kind,'rest');assert.equal(a.logs()[0].minutes,0);assert.equal(a.logs()[0].sets.length,0);
 });
 check('Recovery rule: a prior OFP session prevents a second full workout',()=>{
- const a=boot();date(a,'2026-10-21');a.el('c0_0').checked=true;a.el('save').onclick();
+ const a=boot();date(a,'2026-10-21');a.el('session').value='A';a.el('session').onchange();a.el('c0_0').checked=true;a.el('save').onclick();
  assert.equal(a.logs()[0]?.type,'ofp');a.el('makeReplacement').onclick();
  assert.ok(a.el('replacement').innerHTML.includes('Отдых вместо борьбы'));
 });
-check('Gym today triggers light mode on an otherwise rested day',()=>{
- const a=boot();date(a,'2026-10-22');a.el('replaceGym').value='yes';a.el('makeReplacement').onclick();
- assert.ok(a.el('replacement').innerHTML.includes('Лёгкая работа'));
+check('Gym is removed from active controls but legacy journal remains supported',()=>{
+ const a=boot();assert.ok(!html.includes('id="replaceGym"'));
+ assert.equal(a.el('mode').value,'home');
+ const prior=[{id:'legacy-mixed',type:'ofp',date:'2026-10-22',mode:'mixed',day:'Чт',week:4,sets:[{exercise:'Dead bug',set:1,count:6,kg:0}],minutes:20,fatigue:3}];
+ const b=boot(prior);assert.equal(b.logs().length,1);
 });
 check('Mat and replacement cannot both be recorded for one day',()=>{
  const a=boot();date(a,'2026-10-21');a.el('savemat').onclick();a.el('savemat').onclick();
@@ -98,12 +103,14 @@ check('Malformed saved journal is not overwritten',()=>{
  assert.equal(a.store.get('grappling-ofp-v2'),'{broken json');
 });
 check('Invalid duration does not write an OFP record',()=>{
- const a=boot();date(a,'2026-10-21');a.el('c0_0').checked=true;a.el('minutes').value='-3';a.el('save').onclick();assert.equal(a.logs().length,0);
+ const a=boot();date(a,'2026-10-21');a.el('session').value='A';a.el('session').onchange();a.el('c0_0').checked=true;a.el('minutes').value='-3';a.el('save').onclick();assert.equal(a.logs().length,0);
 });
 
-check('Deload week never proposes a heavy replacement',()=>{
- const a=boot();date(a,'2026-10-21');a.el('week').value='7';a.el('week').onchange();a.el('makeReplacement').onclick();
- assert.ok(a.el('replacement').innerHTML.includes('Лёгкая работа'));
+check('Six-week schedule and Saturday has no additional OFP',()=>{
+ const a=boot();assert.ok(a.el('week').innerHTML.includes('value="6"'));assert.ok(!a.el('week').innerHTML.includes('value="7"'));
+ date(a,'2026-11-14');a.el('session').value='A';a.el('session').onchange();
+ assert.equal(a.el('save').disabled,true);
+ assert.ok(a.el('todaySummary').innerHTML.includes('Схватки'));
 });
 check('Duplicate stored IDs block writes without losing old data',()=>{
  const entry={id:'repeat',type:'mat',date:'2026-10-21',minutes:80,rpe:5,bouts:0};
@@ -115,6 +122,39 @@ check('Progress recommendation stops after a recent painful session',()=>{
  const a=boot(old);assert.ok(!a.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Мёртвый жук'));
  const b=boot(old.slice(0,3));assert.ok(b.el('progress').innerHTML.includes('Можно обсудить с тренером усложнение: Мёртвый жук'));
 });
+
+check('Adult routine is independent and visible',()=>{
+ const a=boot();assert.ok(a.el('adultRoutine').innerHTML.includes('Вставания со стула'));
+ assert.ok(a.el('adultRoutine').innerHTML.includes('15 минут')||a.el('adultRoutine').innerHTML.includes('Кругов: 2'));
+ assert.ok(html.includes('id="adultSection"'));
+});
+check('Adult daily session saves separately without changing grappler journal',()=>{
+ const a=boot();date(a,'2026-11-14');a.el('adultDone').checked=true;
+ a.el('adultSave').onclick();
+ assert.equal(a.adultLogs().length,1);assert.equal(a.adultLogs()[0].date,'2026-11-14');
+ assert.equal(a.adultLogs()[0].mode,'normal');assert.equal(a.adultLogs()[0].minutes,15);
+ assert.equal(a.logs().length,0);
+});
+check('Adult shorter and recovery sessions retain separate dates',()=>{
+ const a=boot();date(a,'2026-11-14');a.el('adultMode').value='short';a.el('adultMode').onchange();
+ a.el('adultDone').checked=true;a.el('adultSave').onclick();
+ date(a,'2026-11-15');a.el('adultMode').value='recovery';a.el('adultMode').onchange();
+ a.el('adultDone').checked=true;a.el('adultSave').onclick();
+ assert.equal(a.adultLogs().length,2);
+ assert.equal(a.adultLogs().find(x=>x.mode==='short').minutes,10);
+ assert.equal(a.adultLogs().find(x=>x.mode==='recovery').minutes,10);
+});
+check('Malformed adult journal cannot be overwritten',()=>{
+ const a=boot([], '{not-json');date(a,'2026-11-14');a.el('adultDone').checked=true;a.el('adultSave').onclick();
+ assert.equal(a.store.get('grappling-adult-v1'),'{not-json');
+});
+check('Teen session selection is reset when date changes',()=>{
+ const a=boot();date(a,'2026-11-12');a.el('session').value='B';a.el('session').onchange();
+ assert.ok(a.el('exercises').innerHTML.includes('Наклон от таза'));
+ date(a,'2026-11-13');assert.equal(a.el('session').value,'');
+ assert.equal(a.el('save').disabled,true);
+});
+
 if(failures.length){
   console.error(JSON.stringify(failures,null,2));
   process.exitCode=1;
