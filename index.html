@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grappling OFP</title><style>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Домашняя ОФП и грепплинг</title><style>
 
 :root{color-scheme:light;--ink:#182d49;--muted:#596d84;--line:#dde5ef;--paper:#fff;--bg:#f3f6fa;--primary:#215eb4}
 *{box-sizing:border-box}
@@ -114,8 +114,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
  .date-bar{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
 }
 
+
+.adult-routine{margin:10px 0}
+.adult-routine li{margin:6px 0;padding-left:3px}
+.adult-routine p{margin:6px 0;font-size:13px}
+.adult-strength{margin-top:11px}
+.adult-strength ul{padding-left:20px;margin:6px 0 12px}
+.adult-strength li{margin:5px 0}
+#adultHistory{font-size:13px}
+#adultHistory p{margin:6px 0}
+.mode-note{font-size:13px;color:var(--muted);margin:7px 0 0}
 </style></head><body>
-<header><div class="site-brand"><h1>GRAPPLING OFP</h1><p>Тренировки и журнал</p></div></header>
+<header><div class="site-brand"><h1>ДОМАШНЯЯ ОФП</h1><p>Зарядка взрослого · подготовка подростка к грепплингу</p></div></header>
 <main>
 <section class="card">
   <div class="date-bar">
@@ -123,19 +133,50 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <div class="field">День недели<output id="weekday">—</output></div>
   </div>
 </section>
+<section class="card" id="adultSection">
+  <h2>Взрослый · зарядка 10–15 минут</h2>
+  <p class="muted">Каждый день по самочувствию. В дни силовой A/B или футбола выбирай восстановительный режим, не добавляй ещё одну тяжёлую тренировку.</p>
+  <label class="field" for="adultMode">Вариант зарядки
+    <select id="adultMode"><option value="normal">15 минут · обычный</option><option value="short">10 минут · короткий</option><option value="recovery">10 минут · восстановление</option></select>
+  </label>
+  <div id="adultRoutine" aria-live="polite"></div>
+  <details class="quiet-details adult-strength"><summary>Силовые тренировки взрослого A/B (2 раза в неделю)</summary>
+    <p class="muted">Не выполнять их как дополнение к двум силовым кругам зарядки. Умеренное усилие, без задержки дыхания; между A и B оставлять время для восстановления.</p>
+    <h3>A: ноги, жим, тяга, корпус</h3>
+    <ul><li>Приседание к стулу: 2 × 8–12</li><li>Отжимания от устойчивой опоры: 2 × 6–10</li><li>Тяга лёгкого рюкзака с опорой: 2 × 8–12 на руку</li><li>Статический выпад: 2 × 15–20 секунд на ногу</li><li>Боковая планка: 2 × 15–25 секунд на сторону</li><li>Баланс на одной ноге: по 20 секунд</li></ul>
+    <h3>B: таз, спина, приводящие, координация</h3>
+    <ul><li>Наклон от таза: 2 × 8–12</li><li>Выпад назад с опорой: 2 × 6–8 на ногу</li><li>Ягодичный мост с удержанием: 2 × 20–30 секунд</li><li>Тяга рюкзака: 2 × 8–12 на руку</li><li>Сжатие подушки между коленями: 2 × 15 секунд</li><li>Перекрёстные движения: 2 × 30 секунд</li></ul>
+    <p class="muted">Это начальная дозировка, не доказанный универсальный оптимум. Вести базовую силовую ОФП 2 дня в неделю отдельно от короткой ежедневной зарядки.</p>
+  </details>
+  <div class="grid">
+    <label class="field" for="adultMinutes">Фактически, минут<input id="adultMinutes" type="number" min="1" max="60" inputmode="numeric" value="15"></label>
+    <label class="field" for="adultFatigue">Усталость, 1–10<input id="adultFatigue" type="number" min="1" max="10" value="3" inputmode="numeric"></label>
+  </div>
+  <label class="checkline"><input type="checkbox" id="adultDone">Сегодня выполнил зарядку</label>
+  <div class="action"><button id="adultSave">Сохранить зарядку</button></div>
+  <p class="muted" id="adultSaved" aria-live="polite"></p>
+  <details class="quiet-details"><summary>Журнал зарядки взрослого и резервная копия</summary>
+    <div id="adultHistory"></div>
+    <div class="backup-actions"><button id="adultExport">Скачать JSON взрослого</button></div>
+    <label class="field" for="adultImport">Восстановить журнал взрослого из JSON<input type="file" id="adultImport" accept=".json,application/json"></label>
+    <p class="muted">Данные взрослого хранятся отдельно от подросткового журнала, только в этом браузере. Импорт заменит весь журнал взрослого после подтверждения.</p>
+  </details>
+</section>
 <section class="card">
   <div class="program-head">
-    <h2>Программа</h2>
-    <label class="visually-hidden" for="mode">Место тренировки</label>
-    <select id="mode"><option value="home">Дома</option><option value="mixed">Дома + зал</option></select>
+    <h2>Подросток · грепплинг и ОФП</h2>
+    <label class="visually-hidden" for="mode">Режим занятий</label>
+    <select id="mode"><option value="home">Дома · без зала</option></select>
   </div>
   <div class="today-summary" id="todaySummary"></div>
   <details class="quiet-details"><summary>Расписание недели</summary><div id="schedule"></div></details>
 </section>
 <section class="card">
-  <h2>ОФП</h2>
+  <h2>Домашняя ОФП подростка</h2>
   <input type="hidden" id="day" value="Пн">
-  <label class="inline-week" for="week">Неделя программы <select id="week"></select></label>
+  <label class="field" for="session">Выбрать тренировку (1–2 раза в неделю, с учётом борьбы)<select id="session"><option value="">Сегодня не планируется</option><option value="A">Тренировка A · ноги, жим, корпус</option><option value="B">Тренировка B · таз, тяга, стабилизация</option></select></label>
+  <p class="mode-note">Выбирай A или B только в подходящий по восстановлению день. Если на ковре 5–6 интенсивных занятий в неделю, начни с одной домашней ОФП; суббота после схваток и воскресенье для дополнительной нагрузки не предусмотрены.</p>
+  <label class="inline-week" for="week">Неделя программы (1–6) <select id="week"></select></label>
   <p class="muted">Отмечай только выполненные подходы.</p>
   <div id="exercises"></div>
   <div class="grid">
@@ -153,9 +194,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <label class="field" for="replaceFeeling">Самочувствие
       <select id="replaceFeeling"><option value="good">Хорошее</option><option value="medium">Есть усталость</option><option value="tired">Сильная усталость / боль</option></select>
     </label>
-    <label class="field" for="replaceGym">Сегодня был зал?
-      <select id="replaceGym"><option value="no">Нет</option><option value="yes">Да</option></select>
-    </label>
+    <p class="muted">Зал сейчас не посещается. Если домашняя ОФП уже выполнена, повторная нагрузка не нужна.</p>
   </div>
   <div class="action"><button id="makeReplacement">Подобрать замену</button></div>
   <div id="replacement" aria-live="polite"></div>
@@ -185,9 +224,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <p class="muted">Восстановление заменяет весь текущий журнал.</p>
   </details>
 </section>
-<p class="footnote">Данные хранятся только в этом браузере. Для переноса на другое устройство используй JSON. Нагрузку согласовывай с тренером.</p>
+<p class="footnote">Записи взрослого и подростка раздельные, но хранятся только в этом браузере. Экспортируй оба JSON-файла перед очисткой данных. Нет синхронизации между устройствами. Для подростка согласуй объём с тренером; при боли или выраженной усталости не тренируйся.</p>
 </main><script>
-const $=x=>document.getElementById(x),days=['Пн','Вт','Ср','Чт','Пт'],plan={home:{'Пн':[['Вис с опорой',2,10],['Dead bug',2,6]],'Вт':[['Приседания без веса',2,8],['Отжимания с опорой',2,8],['Подтягивания с помощью',2,4],['Ягодичный мост',2,10]],'Ср':[['Подвижность плеч и таза',1,10],['Гиперэкстензия лёгкая',1,8]],'Чт':[['Сплит-приседания',2,8],['Подтягивания с помощью',2,4],['Боковая планка (сек)',2,15],['Ягодичный мост',2,10]],'Пт':[['Лёгкая подвижность (мин)',1,10]]},mixed:{'Пн':[['Вис с опорой',1,10],['Dead bug',1,6]],'Вт':[['Гоблет-приседание',2,8],['Горизонтальная тяга блока',2,10],['Отжимания',2,8],['Румынская тяга с лёгкими гантелями',2,8],['Dead bug',2,6]],'Ср':[['Подвижность плеч и таза',1,10]],'Чт':[['Невысокие прыжки',2,3],['Сплит-приседания',2,8],['Вертикальная тяга блока',2,10],['Pallof press',2,8],['Переноска гантелей (м)',2,20]],'Пт':[['Лёгкая подвижность (мин)',1,10]]}};
+const $=x=>document.getElementById(x),days=['Пн','Вт','Ср','Чт','Пт'],plan={home:{
+'A':[['Приседания к стулу',2,8],['Отжимания с опорой',2,6],['Тяга рюкзака',2,8],['Статический выпад (сек)',1,15],['Боковая планка (сек)',1,15],['Баланс на одной ноге (сек)',1,20]],
+'B':[['Наклон от таза',2,8],['Выпады назад',2,6],['Ягодичный мост (сек)',2,15],['Тяга рюкзака',2,8],['Сжатие подушки коленями (сек)',1,15],['Перекрёстные движения (сек)',1,30]]
+}};
 
 const tech={
 'Вис с опорой':['hang','Руки на ширине плеч, плечи не поднимать к ушам. Ноги сохраняют опору.','Не раскачиваться и не висеть через боль в плечах.'],
@@ -208,7 +250,16 @@ const tech={
 'Pallof press':['row','Стоять боком к блоку, выжать рукоять вперёд без поворота корпуса.','Не разворачивать плечи вслед за тросом.'],
 'Переноска гантелей (м)':['walk','Лёгкие гантели, спокойная походка, ровное положение корпуса.','Не наклоняться и не задерживать дыхание.'],
 'Лёгкая подвижность (мин)':['floor','Спокойные движения в комфортной амплитуде, без боли.','Не растягиваться через силу.'],
-'Подвижность плеч и таза (мин)':['floor','Плавно двигать плечами и тазом в комфортной амплитуде.','Избегать резких движений.']
+'Подвижность плеч и таза (мин)':['floor','Плавно двигать плечами и тазом в комфортной амплитуде.','Избегать резких движений.'],
+'Приседания к стулу':['squat','Садись на устойчивый стул и вставай без рывка. Стопы устойчиво, колени по линии носков.','Не падать на стул и не заваливать колени.'],
+'Тяга рюкзака':['row','Закрытый лёгкий рюкзак, одна рука тянет к корпусу, второй можно опираться на устойчивый стол.','Не вращать корпус и не тянуть рывком.'],
+'Статический выпад (сек)':['lunge','Держи небольшую глубину выпада, ровно дыши, колено по линии стопы.','Не задерживать дыхание и не стоять до отказа.'],
+'Баланс на одной ноге (сек)':['walk','Стоя у опоры, удерживай равновесие примерно 20 секунд для каждой ноги.','Не закрывать глаза и не соревноваться на время.'],
+'Наклон от таза':['hinge','Отведи таз назад с почти прямой спиной, колени немного согнуты.','Не округлять спину.'],
+'Выпады назад':['lunge','Шагни назад, опускайся плавно, держись за устойчивую опору по необходимости.','Не делать через боль в колене.'],
+'Ягодичный мост (сек)':['bridge','Лёжа на спине, подними таз и удерживай 15–20 секунд без прогиба поясницы.','Не задерживать дыхание.'],
+'Сжатие подушки коленями (сек)':['floor','Сжимай подушку между коленями умеренно, дыши спокойно.','Не давить максимально и не доводить до боли.'],
+'Перекрёстные движения (сек)':['walk','Медленно касайся ладонью противоположного колена стоя, сохраняй равновесие.','Не выполнять быстро до потери координации.']
 };
 const techniqueLinks={"Pallof press":"https://musclewiki.com/exercise/cable-pallof-press","Dead bug":"https://musclewiki.com/exercise/dead-bug","Гоблет-приседание":"https://musclewiki.com/exercise/dumbbell-goblet-squat","Приседания без веса":"https://musclewiki.com/ru-ru/exercise/bodyweight-squat","Ягодичный мост":"https://musclewiki.com/exercise/glute-bridge","Отжимания с опорой":"https://musclewiki.com/exercise/incline-push-up","Отжимания":"https://musclewiki.com/exercise/push-up","Румынская тяга с лёгкими гантелями":"https://musclewiki.com/exercise/dumbbell-romanian-deadlift","Горизонтальная тяга блока":"https://musclewiki.com/exercise/machine-seated-cable-row","Вертикальная тяга блока":"https://musclewiki.com/exercise/machine-pulldown","Переноска гантелей (м)":"https://musclewiki.com/ru-ru/exercise/dumbbell-farmer-walk","Боковая планка (сек)":"https://musclewiki.com/exercise/elbow-side-plank","Сплит-приседания":"https://musclewiki.com/exercise/split-squat"};
 function detail(name){
@@ -219,7 +270,7 @@ function detail(name){
 const STORE='grappling-ofp-v2',weekdays=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const exerciseDisplayNames={'Dead bug':'Мёртвый жук','Pallof press':'Жим Паллофа','Гиперэкстензия лёгкая':'Лёгкая гиперэкстензия'};
 function displayName(name){return exerciseDisplayNames[name]||name;}
-const units={'Вис с опорой':'сек','Боковая планка (сек)':'сек','Переноска гантелей (м)':'м','Лёгкая подвижность (мин)':'мин'};
+const units={'Вис с опорой':'сек','Боковая планка (сек)':'сек','Переноска гантелей (м)':'м','Лёгкая подвижность (мин)':'мин','Статический выпад (сек)':'сек','Баланс на одной ноге (сек)':'сек','Ягодичный мост (сек)':'сек','Сжатие подушки коленями (сек)':'сек','Перекрёстные движения (сек)':'сек'};
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function dayOf(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(v||''))return null;const d=new Date(v+'T12:00:00');return Number.isFinite(d.getTime())&&d.getFullYear()===+v.slice(0,4)&&d.getMonth()+1===+v.slice(5,7)&&d.getDate()===+v.slice(8,10)?weekdays[d.getDay()]:null;}
 function num(v,min,max){return typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;}
@@ -243,8 +294,8 @@ function lastReplacement(date){return logs.find(x=>x.type==='replacement'&&x.dat
 function syncDate(v){
  const day=dayOf(v);if(!day){$('weekday').textContent='Некорректная дата';return;}
  $('date').value=$('matdate').value=v;$('day').value=day;$('weekday').textContent=day;
- activeReplacement=null;$('replacement').innerHTML='';
- draw();updateMatStatus();
+ activeReplacement=null;$('replacement').innerHTML='';$('session').value='';
+ draw();updateMatStatus();loadAdultDate();
 }
 function updateMatStatus(){
  const date=selectedDate(),rep=lastReplacement(date),mat=lastMat(date),weekDay=currentDay();
@@ -262,11 +313,9 @@ function updateMatStatus(){
  else $('makeReplacement').title='';
 }
 function planForDay(d,mode){
- if(d==='Вс')return 'Отдых';
- if(d==='Сб')return 'Схватки · 10:00';
- if(mode==='mixed'&&(d==='Вт'||d==='Чт'))return 'Зал · 16:00, борьба · 19:00';
- const session=plan[mode]?.[d]?.length?'ОФП, борьба · 19:00':'Борьба · 19:00';
- return session;
+ if(d==='Вс')return 'Отдых, без ОФП';
+ if(d==='Сб')return 'Схватки · 10:00 (время уточнить)';
+ return 'Грепплинг · время по расписанию тренера; домашняя ОФП по самочувствию';
 }
 function draw(){
  const mode=$('mode').value,day=currentDay();
@@ -283,10 +332,10 @@ function exerciseRows(e,i,prefix,setCount){
  '</div>').join('');
 }
 function drawExercises(){
- const day=currentDay(),mode=$('mode').value,w=+$('week').value,p=(plan[mode]||{})[day]||[];
+ const day=currentDay(),mode=$('mode').value,w=+$('week').value,session=$('session').value,p=day==='Вс'||day==='Сб'?[]:(plan[mode]||{})[session]||[];
  $('exercises').innerHTML=p.length?p.map((e,i)=>
- '<div class="exercise"><div class="exercise-title"><strong>'+esc(displayName(e[0]))+'</strong><span class="target">'+(w===7?1:e[1])+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+
- detail(e[0])+exerciseRows(e,i,'',w===7?1:e[1])+'</div>').join(''):'<p class="muted">На этот день ОФП не запланирована.</p>';
+ '<div class="exercise"><div class="exercise-title"><strong>'+esc(displayName(e[0]))+'</strong><span class="target">'+e[1]+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+
+ detail(e[0])+exerciseRows(e,i,'',e[1])+'</div>').join(''):'<p class="muted">'+(day==='Вс'||day==='Сб'?'В этот день дополнительная домашняя ОФП не запланирована.':'Выбери тренировку A или B выше, если восстановился после борьбы.')+'</p>';
  $('save').disabled=!p.length;
 }
 function readSets(items,prefix,withWeight,countFn){
@@ -301,16 +350,17 @@ function readSets(items,prefix,withWeight,countFn){
 }
 $('date').addEventListener('change',e=>syncDate(e.target.value));
 $('mode').addEventListener('change',draw);
+$('session').addEventListener('change',drawExercises);
 $('week').addEventListener('change',drawExercises);
 $('save').onclick=()=>{
- const mode=$('mode').value,day=currentDay(),week=+$('week').value,items=(plan[mode]||{})[day]||[];
+ const mode=$('mode').value,day=currentDay(),week=+$('week').value,session=$('session').value,items=(day==='Вс'||day==='Сб'?[]:(plan[mode]||{})[session])||[];
  if(!items.length)return alert('В этот день нет плановой ОФП.');
  const minutes=Number($('minutes').value),fatigue=Number($('fatigue').value);
  if(!num(minutes,1,240)||!Number.isInteger(minutes)||!num(fatigue,1,10))return alert('Проверьте продолжительность (1–240 мин) и усталость (1–10).');
  let sets;try{sets=readSets(items,'',true,e=>week===7?1:e[1]);}catch(e){return alert(e.message);}
  if(!sets.length)return alert('Отметьте только действительно выполненные подходы.');
  if($('pain').checked&&!confirm('Отмечена боль. Рекомендуется прекратить нагрузку и сообщить тренеру или взрослому. Сохранить уже выполненное?'))return;
- const entry={id:entryId(),type:'ofp',date:selectedDate(),mode,day,week,sets,minutes,fatigue,quality:$('quality').checked,pain:$('pain').checked};
+ const entry={id:entryId(),type:'ofp',date:selectedDate(),mode,session,day,week,sets,minutes,fatigue,quality:$('quality').checked,pain:$('pain').checked};
  if(addEntry(entry)){alert('Сохранено: '+sets.length+' подходов.');$('quality').checked=false;$('pain').checked=false;drawExercises();}
 };
 $('savemat').onclick=()=>{
@@ -320,23 +370,23 @@ $('savemat').onclick=()=>{
  if(addEntry({id:entryId(),type:'mat',date,minutes,rpe,bouts}))alert('Борьба сохранена.');
 };
 const replacementPlans={
- full:{title:'ОФП вместо борьбы, ориентир 30–40 минут',items:[['Приседания без веса',2,8],['Отжимания с опорой',2,8],['Подтягивания с помощью',2,4],['Ягодичный мост',2,10],['Dead bug',2,6]]},
- light:{title:'Лёгкая работа, ориентир 20–25 минут',items:[['Подвижность плеч и таза',1,10],['Dead bug',2,6],['Ягодичный мост',2,8],['Боковая планка (сек)',1,15]]},
+ full:{title:'Домашний блок A вместо борьбы · 20–25 минут',items:[['Приседания к стулу',2,8],['Отжимания с опорой',2,6],['Тяга рюкзака',2,8],['Dead bug',1,6]]},
+ light:{title:'Лёгкая работа · 10–15 минут',items:[['Подвижность плеч и таза',1,10],['Dead bug',1,6],['Ягодичный мост',1,8]]},
  rest:{title:'Отдых вместо борьбы',items:[]}
 };
 let activeReplacement=null;
-['replaceFeeling','replaceGym'].forEach(id=>$(id).addEventListener('change',()=>{activeReplacement=null;$('replacement').innerHTML='<p class="muted">Условия изменились. Нажмите «Подобрать замену» ещё раз.</p>';}));
+['replaceFeeling'].forEach(id=>$(id).addEventListener('change',()=>{activeReplacement=null;$('replacement').innerHTML='<p class="muted">Условия изменились. Нажмите «Подобрать замену» ещё раз.</p>';}));
 $('makeReplacement').onclick=()=>{
  const date=selectedDate();
  if(!dayOf(date)||currentDay()==='Вс')return alert('На выбранную дату борьба не запланирована.');
  if(lastReplacement(date)||lastMat(date))return alert('На эту дату уже есть запись борьбы или её отмены. Сначала удалите её в истории.');
- const feeling=$('replaceFeeling').value,gym=$('replaceGym').value;
+ const feeling=$('replaceFeeling').value,gym='no';
  const hadOfp=logs.some(x=>x.date===date&&x.type==='ofp');
- let kind=feeling==='tired'||hadOfp||(gym==='yes'&&feeling==='medium')?'rest':feeling==='medium'||gym==='yes'?'light':'full';
- if((currentDay()==='Сб'||+$('week').value===7)&&kind==='full')kind='light';
+ let kind=feeling==='tired'||hadOfp?'rest':feeling==='medium'?'light':'full';
+ if(currentDay()==='Сб'&&kind==='full')kind='light';
  activeReplacement={date,kind,feeling,gym,...replacementPlans[kind]};
  const p=activeReplacement;
- $('replacement').innerHTML='<h3>'+p.title+'</h3><p class="muted">'+(hadOfp?'ОФП уже записана. Новая нагрузка не нужна. ':gym==='yes'?'Сегодня был зал. ':'')+'Без максимальных весов и работы через боль.</p>'+
+ $('replacement').innerHTML='<h3>'+p.title+'</h3><p class="muted">'+(hadOfp?'ОФП уже записана. Новая нагрузка не нужна. ':'')+'Без максимальных весов и работы через боль.</p>'+
  (kind==='rest'?'<p class="status-note">Дополнительная тренировка не нужна.</p>':p.items.map((e,i)=>'<div class="exercise"><div class="exercise-title"><strong>'+esc(displayName(e[0]))+'</strong><span class="target">'+e[1]+' × '+e[2]+' '+esc(units[e[0]]||'повт.')+'</span></div>'+detail(e[0])+exerciseRows(e,i,'rep_',e[1])+'</div>').join('')+
  '<div class="grid"><label class="field">Фактически, мин<input id="repMinutes" type="number" min="1" max="180" placeholder="Минуты" inputmode="numeric"></label><label class="field">Усталость, 1–10<input id="repFatigue" type="number" min="1" max="10" placeholder="1–10" inputmode="numeric"></label></div>'+
  '<label class="checkline"><input id="repQuality" type="checkbox">Техника была хорошей</label><label class="checkline"><input id="repPain" type="checkbox">Была боль</label>')+
@@ -414,9 +464,98 @@ $('import').onchange=async e=>{
   else alert('Копия восстановлена: '+next.length+' записей.');
  }catch(err){alert('Ошибка импорта: '+err.message);}finally{e.target.value='';}
 };
+
+/* Журнал зарядки взрослого: строго отдельно от подросткового v2, без отправки данных на сервер. */
+const ADULT_STORE='grappling-adult-v1';
+const adultRoutineDefinitions={
+ normal:{minutes:15,rounds:2,note:'2 минуты разминки + два круга по 6 минут + 1 минута спокойного завершения.',items:[
+ 'Вставания со стула: 6–10 спокойных повторений',
+ 'Отжимания от стены/устойчивой опоры: 6–10 повторений',
+ 'Изометрическое растягивание полотенца: 4–5 раз по 5 секунд',
+ 'Ягодичный мост: 8–12 повторений',
+ 'Bird-dog: медленные движения противоположных руки и ноги',
+ 'Перекрёстная ходьба и баланс: 20 секунд шагов, по 10 секунд равновесия'
+ ]},
+ short:{minutes:10,rounds:1,note:'2 минуты разминки + один круг 6 минут + 1 минута баланса и 1 минута завершения.',items:[
+ 'Вставания со стула: 6–10 раз','Отжимания от высокой опоры: 6–10 раз',
+ 'Растягивание полотенца: 4–5 × 5 секунд','Ягодичный мост: 8–12 раз',
+ 'Bird-dog: плавно, чередуй стороны','Перекрёстные шаги и баланс: 40 секунд'
+ ]},
+ recovery:{minutes:10,rounds:1,note:'Очень лёгкий вариант в дни основной силовой ОФП, футбола или усталости.',items:[
+ '0:00–2:00 · спокойная ходьба',
+ '2:00–3:00 · движения плечами и лопатками',
+ '3:00–4:00 · «кошка-корова» без крайней амплитуды',
+ '4:00–6:00 · подвижность таза и наклоны от таза',
+ '6:00–8:00 · лёгкий Bird-dog или ходьба',
+ '8:00–9:00 · равновесие у опоры',
+ '9:00–10:00 · спокойная ходьба и дыхание'
+ ]}};
+function validAdultLog(x){return x&&typeof x==='object'&&!Array.isArray(x)&&dayOf(x.date)&&Object.hasOwn(adultRoutineDefinitions,x.mode)&&num(x.minutes,1,60)&&Number.isInteger(x.minutes)&&num(x.fatigue,1,10);}
+let adultLogs=[],adultLoadError=false;
+try{
+ const stored=JSON.parse(localStorage.getItem(ADULT_STORE)||'[]');
+ if(!Array.isArray(stored)||stored.length>3000||!stored.every(validAdultLog)||new Set(stored.map(x=>x.date)).size!==stored.length)throw Error('Повреждённый журнал');
+ adultLogs=stored;
+}catch(err){adultLoadError=true;}
+function adultPersist(next){
+ if(adultLoadError){alert('Журнал взрослого повреждён. Скачайте исходный JSON или импортируйте корректную копию.');return false;}
+ try{localStorage.setItem(ADULT_STORE,JSON.stringify(next));adultLogs=next;renderAdultHistory();return true;}
+ catch(err){alert('Не удалось записать журнал взрослого. Проверьте браузер и сделайте резервную копию.');return false;}
+}
+function drawAdult(){
+ const type=$('adultMode').value,r=adultRoutineDefinitions[type];
+ $('adultRoutine').innerHTML='<p class="status-note">'+esc(r.note)+'</p>'+
+ '<p class="muted">'+(type==='normal'||type==='short'?'Каждая станция: до 40 секунд работы и 20 секунд перехода. Кругов: '+r.rounds+'.':'Нагрузка очень лёгкая, без силовой работы до усталости.')+'</p>'+
+ '<ol class="adult-routine">'+r.items.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ol>'+
+ '<p class="muted">Дыхание свободное, без задержек. При боли, головокружении или необычной одышке прекрати занятие.</p>';
+ $('adultMinutes').value=String(r.minutes);
+}
+function loadAdultDate(){
+ const item=adultLogs.find(x=>x.date===selectedDate());
+ $('adultMode').value=item?.mode||'normal';
+ drawAdult();
+ $('adultDone').checked=!!item;
+ $('adultMinutes').value=String(item?.minutes??adultRoutineDefinitions[$('adultMode').value].minutes);
+ $('adultFatigue').value=String(item?.fatigue??3);
+ $('adultSaved').textContent=item?'Для выбранной даты уже есть запись. При повторном сохранении потребуется подтверждение.':'';
+}
+function renderAdultHistory(){
+ if(adultLoadError){$('adultHistory').textContent='Ошибка чтения журнала. Запись заблокирована, сначала экспортируйте исходный JSON.';return;}
+ $('adultHistory').innerHTML='<p class="muted">Сохранено дней: '+adultLogs.length+'</p>'+
+ (adultLogs.length?adultLogs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,25)
+ .map(x=>'<p><strong>'+esc(x.date)+'</strong> · '+esc(x.mode==='normal'?'15 мин':x.mode==='short'?'короткая':'восстановление')+' · '+x.minutes+' мин · усталость '+x.fatigue+'/10</p>').join(''):'<p class="muted">Записей пока нет.</p>');
+}
+$('adultMode').addEventListener('change',drawAdult);
+$('adultSave').onclick=()=>{
+ if(adultLoadError)return alert('Сначала восстановите данные взрослого из JSON.');
+ if(!$('adultDone').checked)return alert('Отметьте выполненную зарядку.');
+ const date=selectedDate(),mode=$('adultMode').value,minutes=Number($('adultMinutes').value),fatigue=Number($('adultFatigue').value);
+ if(!dayOf(date)||!Object.hasOwn(adultRoutineDefinitions,mode)||!num(minutes,1,60)||!Number.isInteger(minutes)||!num(fatigue,1,10)||!Number.isInteger(fatigue))return alert('Проверьте дату, минуты (1–60) и усталость (1–10).');
+ if(adultLogs.some(x=>x.date===date)&&!confirm('Для этой даты есть запись взрослого. Заменить её?'))return;
+ if(adultPersist([...adultLogs.filter(x=>x.date!==date),{date,mode,minutes,fatigue}])){
+   $('adultSaved').textContent='Зарядка сохранена за '+date+'.';alert('Зарядка взрослого сохранена.');
+ }
+};
+$('adultExport').onclick=()=>{
+ if(adultLoadError)return download('adult-raw-backup.json',localStorage.getItem(ADULT_STORE)||'','application/json');
+ download('adult-daily-ofp.json',JSON.stringify({version:1,logs:adultLogs},null,2),'application/json');
+};
+$('adultImport').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>1024*1024)throw Error('Слишком большой файл (не больше 1 МБ).');
+  const parsed=JSON.parse(await file.text()),next=Array.isArray(parsed)?parsed:parsed?.logs;
+  if(!Array.isArray(next)||next.length>3000||!next.every(validAdultLog)||new Set(next.map(x=>x.date)).size!==next.length)throw Error('Неверный формат журнала взрослого.');
+  if(!confirm('Заменить ВЕСЬ журнал взрослого ('+next.length+' записей)? Журнал подростка останется без изменений.'))return;
+  const previousError=adultLoadError;adultLoadError=false;
+  if(!adultPersist(next))adultLoadError=previousError;
+  else {loadAdultDate();alert('Журнал взрослого восстановлен.');}
+ }catch(err){alert('Ошибка импорта: '+err.message);}finally{e.target.value='';}
+};
+
 $('date').value=new Date().toLocaleDateString('sv-SE');
-$('week').innerHTML=Array.from({length:8},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
+$('week').innerHTML=Array.from({length:6},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
 if(loadError){$('stats').textContent='Ошибка чтения истории! Экспортируйте исходные данные JSON, затем восстановите исправную резервную копию.';}
-draw();syncDate($('date').value);render();if(loadError){$('stats').textContent='Ошибка чтения истории. Экспортируйте исходный JSON и восстановите исправную копию. Новые записи заблокированы до восстановления.';}
+draw();syncDate($('date').value);render();renderAdultHistory();if(loadError){$('stats').textContent='Ошибка чтения истории. Экспортируйте исходный JSON и восстановите исправную копию. Новые записи заблокированы до восстановления.';}
 
 </script></body></html>
