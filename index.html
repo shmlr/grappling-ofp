@@ -124,13 +124,29 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 #adultHistory{font-size:13px}
 #adultHistory p{margin:6px 0}
 .mode-note{font-size:13px;color:var(--muted);margin:7px 0 0}
+
+[hidden]{display:none!important}
+.profile-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:3px 0 14px;min-width:0}
+.profile-tab{border:1px solid #c6d2e2;background:#fff;color:#294563;border-radius:13px;text-align:left;padding:12px 14px;min-height:70px;font-size:15px;font-weight:750;box-shadow:0 2px 9px #19345109}
+.profile-tab small{display:block;font-size:12px;font-weight:450;margin-top:3px;color:#596d84}
+.profile-tab[aria-selected="true"]{background:#215eb4;border-color:#215eb4;color:#fff}
+.profile-tab[aria-selected="true"] small{color:#e0ecff}
+.profile-tab:hover:not(:disabled){background:#eaf1fc;color:#173e70}
+.profile-tab[aria-selected="true"]:hover:not(:disabled){background:#194e99;color:#fff}
+.profile-tab:focus-visible{outline:3px solid #eeaf41;outline-offset:2px}
+@media(max-width:360px){.profile-tabs{gap:7px}.profile-tab{padding:10px;min-height:70px;font-size:14px}.profile-tab small{font-size:11px}}
 </style></head><body>
 <header><div class="site-brand"><h1>ДОМАШНЯЯ ОФП</h1><p>Зарядка взрослого · подготовка подростка к грепплингу</p></div></header>
 <main>
+<nav class="profile-tabs" role="tablist" aria-label="Выбор личной программы">
+  <button type="button" class="profile-tab" id="tabAdult" role="tab" aria-controls="panelAdult" aria-selected="true" tabindex="0">Для меня<small>Зарядка и ОФП</small></button>
+  <button type="button" class="profile-tab" id="tabTeen" role="tab" aria-controls="panelTeen" aria-selected="false" tabindex="-1">Для подростка<small>Грепплинг и ОФП</small></button>
+</nav>
+<section id="panelAdult" role="tabpanel" aria-labelledby="tabAdult">
 <section class="card">
   <div class="date-bar">
-    <label class="field" for="date">Дата<input type="date" id="date"></label>
-    <div class="field">День недели<output id="weekday">—</output></div>
+    <label class="field" for="adultDate">Дата моей зарядки<input type="date" id="adultDate"></label>
+    <div class="field">День недели<output id="adultWeekday">—</output></div>
   </div>
 </section>
 <section class="card" id="adultSection">
@@ -161,6 +177,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <label class="field" for="adultImport">Восстановить журнал взрослого из JSON<input type="file" id="adultImport" accept=".json,application/json"></label>
     <p class="muted">Данные взрослого хранятся отдельно от подросткового журнала, только в этом браузере. Импорт заменит весь журнал взрослого после подтверждения.</p>
   </details>
+</section>
+</section>
+<section id="panelTeen" role="tabpanel" aria-labelledby="tabTeen" hidden>
+<section class="card">
+  <div class="date-bar">
+    <label class="field" for="date">Дата тренировки подростка<input type="date" id="date"></label>
+    <div class="field">День недели<output id="weekday">—</output></div>
+  </div>
 </section>
 <section class="card">
   <div class="program-head">
@@ -223,6 +247,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <label class="field" for="import">Восстановить из JSON<input type="file" id="import" accept=".json,application/json"></label>
     <p class="muted">Восстановление заменяет весь текущий журнал.</p>
   </details>
+</section>
 </section>
 <p class="footnote">Записи взрослого и подростка раздельные, но хранятся только в этом браузере. Экспортируй оба JSON-файла перед очисткой данных. Нет синхронизации между устройствами. Для подростка согласуй объём с тренером; при боли или выраженной усталости не тренируйся.</p>
 </main><script>
@@ -295,7 +320,7 @@ function syncDate(v){
  const day=dayOf(v);if(!day){$('weekday').textContent='Некорректная дата';return;}
  $('date').value=$('matdate').value=v;$('day').value=day;$('weekday').textContent=day;
  activeReplacement=null;$('replacement').innerHTML='';$('session').value='';
- draw();updateMatStatus();loadAdultDate();
+ draw();updateMatStatus();
 }
 function updateMatStatus(){
  const date=selectedDate(),rep=lastReplacement(date),mat=lastMat(date),weekDay=currentDay();
@@ -510,8 +535,16 @@ function drawAdult(){
  '<p class="muted">Дыхание свободное, без задержек. При боли, головокружении или необычной одышке прекрати занятие.</p>';
  $('adultMinutes').value=String(r.minutes);
 }
+function adultSelectedDate(){return $('adultDate').value;}
+function syncAdultDate(value){
+ const d=dayOf(value);
+ if(!d){$('adultWeekday').textContent='Некорректная дата';return;}
+ $('adultDate').value=value;
+ $('adultWeekday').textContent=d;
+ loadAdultDate();
+}
 function loadAdultDate(){
- const item=adultLogs.find(x=>x.date===selectedDate());
+ const item=adultLogs.find(x=>x.date===adultSelectedDate());
  $('adultMode').value=item?.mode||'normal';
  drawAdult();
  $('adultDone').checked=!!item;
@@ -526,10 +559,11 @@ function renderAdultHistory(){
  .map(x=>'<p><strong>'+esc(x.date)+'</strong> · '+esc(x.mode==='normal'?'15 мин':x.mode==='short'?'короткая':'восстановление')+' · '+x.minutes+' мин · усталость '+x.fatigue+'/10</p>').join(''):'<p class="muted">Записей пока нет.</p>');
 }
 $('adultMode').addEventListener('change',drawAdult);
+$('adultDate').addEventListener('change',e=>syncAdultDate(e.target.value));
 $('adultSave').onclick=()=>{
  if(adultLoadError)return alert('Сначала восстановите данные взрослого из JSON.');
  if(!$('adultDone').checked)return alert('Отметьте выполненную зарядку.');
- const date=selectedDate(),mode=$('adultMode').value,minutes=Number($('adultMinutes').value),fatigue=Number($('adultFatigue').value);
+ const date=adultSelectedDate(),mode=$('adultMode').value,minutes=Number($('adultMinutes').value),fatigue=Number($('adultFatigue').value);
  if(!dayOf(date)||!Object.hasOwn(adultRoutineDefinitions,mode)||!num(minutes,1,60)||!Number.isInteger(minutes)||!num(fatigue,1,10)||!Number.isInteger(fatigue))return alert('Проверьте дату, минуты (1–60) и усталость (1–10).');
  if(adultLogs.some(x=>x.date===date)&&!confirm('Для этой даты есть запись взрослого. Заменить её?'))return;
  if(adultPersist([...adultLogs.filter(x=>x.date!==date),{date,mode,minutes,fatigue}])){
@@ -553,9 +587,30 @@ $('adultImport').onchange=async e=>{
  }catch(err){alert('Ошибка импорта: '+err.message);}finally{e.target.value='';}
 };
 
+/* Переключение вкладок не меняет журнал и дату другой программы. */
+function switchProfile(which,focusTab=false){
+ const adult=which==='adult',selected=adult?'tabAdult':'tabTeen',other=adult?'tabTeen':'tabAdult';
+ $('panelAdult').hidden=!adult;
+ $('panelTeen').hidden=adult;
+ $(selected).setAttribute('aria-selected','true');
+ $(selected).setAttribute('tabindex','0');
+ $(other).setAttribute('aria-selected','false');
+ $(other).setAttribute('tabindex','-1');
+ if(focusTab)$(selected).focus();
+}
+$('tabAdult').addEventListener('click',()=>switchProfile('adult'));
+$('tabTeen').addEventListener('click',()=>switchProfile('teen'));
+['tabAdult','tabTeen'].forEach(id=>$(id).addEventListener('keydown',e=>{
+ let target=null;
+ if(e.key==='ArrowRight'||e.key==='ArrowLeft')target=id==='tabAdult'?'teen':'adult';
+ else if(e.key==='Home')target='adult';
+ else if(e.key==='End')target='teen';
+ if(target){e.preventDefault();switchProfile(target,true);}
+}));
 $('date').value=new Date().toLocaleDateString('sv-SE');
+$('adultDate').value=$('date').value;
 $('week').innerHTML=Array.from({length:6},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
 if(loadError){$('stats').textContent='Ошибка чтения истории! Экспортируйте исходные данные JSON, затем восстановите исправную резервную копию.';}
-draw();syncDate($('date').value);render();renderAdultHistory();if(loadError){$('stats').textContent='Ошибка чтения истории. Экспортируйте исходный JSON и восстановите исправную копию. Новые записи заблокированы до восстановления.';}
+draw();syncDate($('date').value);syncAdultDate($('adultDate').value);render();renderAdultHistory();switchProfile('adult');if(loadError){$('stats').textContent='Ошибка чтения истории. Экспортируйте исходный JSON и восстановите исправную копию. Новые записи заблокированы до восстановления.';}
 
 </script></body></html>
