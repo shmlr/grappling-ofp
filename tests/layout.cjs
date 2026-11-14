@@ -28,7 +28,9 @@ const run=async()=>{
   await page.goto(url,{waitUntil:'load'});
   await page.locator('#date').fill('2026-10-21');
   assert.equal(await page.locator('#weekday').innerText(),'Ср');
+  await page.locator('#session').selectOption('A');
   assert.ok(await page.locator('#exercises .exercise').count()>0);
+  assert.ok(await page.locator('#adultRoutine li').count()>0,'Adult routine appears');
   const scan=async scenario=>{
     const report=await page.evaluate(()=>{
       const W=window.innerWidth;
@@ -54,10 +56,20 @@ const run=async()=>{
     assert.equal(report.rowOverlaps,false,'Inputs overlap at '+width+' '+scenario);
   };
   await scan('overview');
+  await page.locator('#adultMode').selectOption('recovery');
+  await scan('adult-recovery');
+  await page.locator('#adultMode').selectOption('normal');
   if(width===390){
     const file=path.resolve(__dirname,'../artifacts/ui-overview-390.jpg');
     await page.screenshot({path:file,type:'jpeg',quality:65,fullPage:false});
     if(process.env.CAPTURE_UI==='1')console.log('UI_OVERVIEW_JPEG_BASE64='+fs.readFileSync(file).toString('base64'));
+  }
+  if(width===390){
+    await page.locator('#adultDone').check();
+    await page.locator('#adultSave').click();
+    assert.ok((await page.locator('#adultHistory').innerText()).includes('Сохранено дней: 1'));
+    assert.ok(!(await page.locator('#history').innerText()).includes('2026-10-21'),'Adult entry not inserted into teen history');
+    await scan('adult-saved');
   }
   await page.locator('#makeReplacement').click();
   await page.locator('#replacement .set-row').first().waitFor();
