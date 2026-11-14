@@ -5,17 +5,22 @@ const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
 const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script,'Inline application script exists');
-assert.equal((html.match(/id="date"/g)||[]).length,1,'Exactly one visible date input');
+assert.equal((html.match(/id="date"/g)||[]).length,1,'Exactly one teen date input');
+assert.equal((html.match(/id="adultDate"/g)||[]).length,1,'Exactly one independent adult date input');
+assert.ok(html.includes('role="tablist"')&&html.includes('role="tabpanel"'),'Separate accessible tabs');
 assert.ok(!html.includes('function viz(kind)'),'Unused SVG exercise sketches removed');
 const failures=[];
 function boot(seed=[],adultSeed=[]){
-  const defaults={mode:'home',session:'',date:'',matdate:'',day:'Пн',week:'1',minutes:'20',fatigue:'3',matmin:'80',rpe:'5',bouts:'0',replaceFeeling:'good',adultMode:'normal',adultMinutes:'15',adultFatigue:'3'};
+  const defaults={mode:'home',session:'',date:'',adultDate:'',matdate:'',day:'Пн',week:'1',minutes:'20',fatigue:'3',matmin:'80',rpe:'5',bouts:'0',replaceFeeling:'good',adultMode:'normal',adultMinutes:'15',adultFatigue:'3'};
   const elements=new Map(),alerts=[],store=new Map();
   if(seed!==null)store.set('grappling-ofp-v2',typeof seed==='string'?seed:JSON.stringify(seed));
   if(adultSeed!==null)store.set('grappling-adult-v1',typeof adultSeed==='string'?adultSeed:JSON.stringify(adultSeed));
   function el(id){
     if(elements.has(id))return elements.get(id);
-    const x={id,value:defaults[id]??'',checked:false,disabled:false,textContent:'',className:'',title:'',files:[],onclick:null,addEventListener(type,fn){this['on'+type]=fn;}};
+    const attrs=new Map();
+    const x={id,value:defaults[id]??'',checked:false,disabled:false,hidden:id==='panelTeen',textContent:'',className:'',title:'',files:[],onclick:null,focused:false,
+      addEventListener(type,fn){this['on'+type]=fn;},setAttribute(key,value){attrs.set(key,String(value));},
+      getAttribute(key){return attrs.get(key)||null;},focus(){this.focused=true;}};
     let markup='';
     Object.defineProperty(x,'innerHTML',{get(){return markup;},set(value){
       markup=String(value);
@@ -39,6 +44,7 @@ function check(title,fn){
   catch(e){failures.push({title,error:e.stack||String(e)});console.error('FAIL '+title,e.message);}
 }
 function date(app,value){app.el('date').onchange({target:{value}});}
+function adultDate(app,value){app.el('adultDate').onchange({target:{value}});}
 check('Initial render and valid date',()=>{
  const a=boot();assert.ok(a.el('schedule').innerHTML);assert.ok(a.el('weekday').textContent);
 });
@@ -129,23 +135,23 @@ check('Adult routine is independent and visible',()=>{
  assert.ok(html.includes('id="adultSection"'));
 });
 check('Adult daily session saves separately without changing grappler journal',()=>{
- const a=boot();date(a,'2026-11-14');a.el('adultDone').checked=true;
+ const a=boot();adultDate(a,'2026-11-14');a.el('adultDone').checked=true;
  a.el('adultSave').onclick();
  assert.equal(a.adultLogs().length,1);assert.equal(a.adultLogs()[0].date,'2026-11-14');
  assert.equal(a.adultLogs()[0].mode,'normal');assert.equal(a.adultLogs()[0].minutes,15);
  assert.equal(a.logs().length,0);
 });
 check('Adult shorter and recovery sessions retain separate dates',()=>{
- const a=boot();date(a,'2026-11-14');a.el('adultMode').value='short';a.el('adultMode').onchange();
+ const a=boot();adultDate(a,'2026-11-14');a.el('adultMode').value='short';a.el('adultMode').onchange();
  a.el('adultDone').checked=true;a.el('adultSave').onclick();
- date(a,'2026-11-15');a.el('adultMode').value='recovery';a.el('adultMode').onchange();
+ adultDate(a,'2026-11-15');a.el('adultMode').value='recovery';a.el('adultMode').onchange();
  a.el('adultDone').checked=true;a.el('adultSave').onclick();
  assert.equal(a.adultLogs().length,2);
  assert.equal(a.adultLogs().find(x=>x.mode==='short').minutes,10);
  assert.equal(a.adultLogs().find(x=>x.mode==='recovery').minutes,10);
 });
 check('Malformed adult journal cannot be overwritten',()=>{
- const a=boot([], '{not-json');date(a,'2026-11-14');a.el('adultDone').checked=true;a.el('adultSave').onclick();
+ const a=boot([], '{not-json');adultDate(a,'2026-11-14');a.el('adultDone').checked=true;a.el('adultSave').onclick();
  assert.equal(a.store.get('grappling-adult-v1'),'{not-json');
 });
 check('Teen session selection is reset when date changes',()=>{
@@ -153,6 +159,45 @@ check('Teen session selection is reset when date changes',()=>{
  assert.ok(a.el('exercises').innerHTML.includes('Наклон от таза'));
  date(a,'2026-11-13');assert.equal(a.el('session').value,'');
  assert.equal(a.el('save').disabled,true);
+});
+
+
+check('Profile tabs are separate and keep their respective dates',()=>{
+ const a=boot();
+ assert.equal(a.el('panelAdult').hidden,false);
+ assert.equal(a.el('panelTeen').hidden,true);
+ assert.equal(a.el('tabAdult').getAttribute('aria-selected'),'true');
+ adultDate(a,'2026-11-10');
+ a.el('tabTeen').onclick();
+ assert.equal(a.el('panelAdult').hidden,true);
+ assert.equal(a.el('panelTeen').hidden,false);
+ assert.equal(a.el('tabTeen').getAttribute('aria-selected'),'true');
+ date(a,'2026-11-12');
+ assert.equal(a.el('adultDate').value,'2026-11-10');
+ a.el('tabAdult').onclick();
+ assert.equal(a.el('date').value,'2026-11-12');
+ assert.equal(a.el('adultWeekday').textContent,'Вт');
+ assert.equal(a.el('weekday').textContent,'Чт');
+});
+check('Changing the teen date never changes an adult saved session',()=>{
+ const a=boot();
+ adultDate(a,'2026-11-10');a.el('adultDone').checked=true;a.el('adultSave').onclick();
+ date(a,'2026-11-13');
+ assert.equal(a.adultLogs().length,1);
+ assert.equal(a.adultLogs()[0].date,'2026-11-10');
+ assert.equal(a.el('adultDate').value,'2026-11-10');
+ assert.equal(a.el('date').value,'2026-11-13');
+});
+check('Tab keyboard navigation is accessible',()=>{
+ const a=boot();
+ let prevented=false;
+ a.el('tabAdult').onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});
+ assert.equal(prevented,true);
+ assert.equal(a.el('panelTeen').hidden,false);
+ assert.equal(a.el('tabTeen').focused,true);
+ a.el('tabTeen').onkeydown({key:'Home',preventDefault(){}});
+ assert.equal(a.el('panelAdult').hidden,false);
+ assert.equal(a.el('tabAdult').focused,true);
 });
 
 if(failures.length){

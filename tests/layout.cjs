@@ -26,10 +26,10 @@ const run=async()=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('dialog',dialog=>dialog.accept());
   await page.goto(url,{waitUntil:'load'});
-  await page.locator('#date').fill('2026-10-21');
-  assert.equal(await page.locator('#weekday').innerText(),'Ср');
-  await page.locator('#session').selectOption('A');
-  assert.ok(await page.locator('#exercises .exercise').count()>0);
+  assert.ok(await page.locator('#panelAdult').isVisible(),'Adult panel is default');
+  assert.ok(await page.locator('#panelTeen').isHidden(),'Teen panel starts hidden');
+  await page.locator('#adultDate').fill('2026-10-20');
+  assert.equal(await page.locator('#adultWeekday').innerText(),'Вт');
   assert.ok(await page.locator('#adultRoutine li').count()>0,'Adult routine appears');
   const scan=async scenario=>{
     const report=await page.evaluate(()=>{
@@ -55,7 +55,7 @@ const run=async()=>{
     assert.deepEqual(report.clipped,[],'Clipped elements at '+width+' '+scenario+': '+JSON.stringify(report.clipped));
     assert.equal(report.rowOverlaps,false,'Inputs overlap at '+width+' '+scenario);
   };
-  await scan('overview');
+  await scan('adult-overview');
   await page.locator('#adultMode').selectOption('recovery');
   await scan('adult-recovery');
   await page.locator('#adultMode').selectOption('normal');
@@ -71,6 +71,15 @@ const run=async()=>{
     assert.ok(!(await page.locator('#history').innerText()).includes('2026-10-21'),'Adult entry not inserted into teen history');
     await scan('adult-saved');
   }
+  await page.locator('#tabTeen').click();
+  assert.ok(await page.locator('#panelAdult').isHidden(),'Adult panel hidden in teen tab');
+  assert.ok(await page.locator('#panelTeen').isVisible(),'Teen panel visible');
+  await page.locator('#date').fill('2026-10-21');
+  assert.equal(await page.locator('#weekday').innerText(),'Ср');
+  assert.equal(await page.locator('#adultDate').inputValue(),'2026-10-20','Independent dates across tabs');
+  await page.locator('#session').selectOption('A');
+  assert.ok(await page.locator('#exercises .exercise').count()>0);
+  await scan('teen-overview');
   await page.locator('#makeReplacement').click();
   await page.locator('#replacement .set-row').first().waitFor();
   await scan('replacement');
@@ -93,6 +102,10 @@ const run=async()=>{
   for(const s of longTexts)assert.ok((await page.locator('body').innerText()).includes(s),'Missing text: '+s);
   assert.equal(await page.locator('#matmin').inputValue(),'0');
   assert.ok(await page.locator('#savemat').isDisabled());
+  await page.locator('#tabAdult').click();
+  assert.ok(await page.locator('#panelAdult').isVisible(),'Adult tab returns without losing state');
+  assert.equal(await page.locator('#adultDate').inputValue(),'2026-10-20');
+  await scan('adult-after-teen');
   assert.deepEqual(errors,[],'Browser errors at '+width+': '+errors.join(';'));
   await page.close();
  }
