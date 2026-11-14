@@ -43,7 +43,7 @@ check('Initial render and valid date',()=>{
  const a=boot();assert.ok(a.el('schedule').innerHTML);assert.ok(a.el('weekday').textContent);
 });
 check('Mobile UI structure has one date and expandable help',()=>{
- const a=boot();
+ const a=boot();date(a,'2026-11-11');
  assert.ok(a.el('todaySummary').innerHTML);
  assert.ok(html.includes('class="exercise-info"')===false || html.includes('function detail(name)'));
  a.el('session').value='A';a.el('session').onchange();
