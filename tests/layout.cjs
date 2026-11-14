@@ -67,7 +67,7 @@ const run=async()=>{
   if(width===390){
     await page.locator('#adultDone').check();
     await page.locator('#adultSave').click();
-    assert.ok((await page.locator('#adultHistory').innerText()).includes('Сохранено дней: 1'));
+    assert.ok((await page.locator('#adultHistory').textContent()).includes('Сохранено дней: 1'));
     assert.ok(!(await page.locator('#history').innerText()).includes('2026-10-21'),'Adult entry not inserted into teen history');
     await scan('adult-saved');
   }
